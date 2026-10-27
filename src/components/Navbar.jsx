@@ -1,185 +1,141 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import { menuItems } from "../data/menu";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useAuth, useCart, useRole } from "../hooks/useAppContext";
 import Logo from "./Logo";
+import RoleSwitcher, { RoleSwitcherInline } from "./RoleSwitcher";
 
 const navLinks = [
-  { to: "/", label: "Home" },
+  { to: "/", label: "Home", end: true },
   { to: "/menu", label: "Menu" },
-  { to: "/offers", label: "Offers" },
+  { to: "/rescue", label: "Rescue" },
+  { to: "/impact", label: "Impact" },
   { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
 ];
+
+// One extra link depending on the demo role, so the bar never gets crowded.
+const roleLinks = {
+  staff: { to: "/dashboard", label: "Dashboard" },
+  partner: { to: "/partner", label: "My pickups" },
+};
+
+const linkClass = ({ isActive }) =>
+  `relative px-3 py-2 text-sm font-medium transition-colors ${
+    isActive
+      ? "text-espresso after:absolute after:left-3 after:right-3 after:-bottom-px after:h-0.5 after:bg-caramel"
+      : "text-charcoal-soft hover:text-espresso"
+  }`;
 
 export default function Navbar() {
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
+  const { role } = useRole();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const searchRef = useRef(null);
-  const profileRef = useRef(null);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountRef = useRef(null);
+  const extra = roleLinks[role];
+
+  // Close menus when the route changes.
+  const [lastPath, setLastPath] = useState(pathname);
+  if (lastPath !== pathname) {
+    setLastPath(pathname);
+    setMobileOpen(false);
+    setAccountOpen(false);
+  }
 
   useEffect(() => {
-    if (searchOpen) searchRef.current?.focus();
-  }, [searchOpen]);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 12);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    function onClick(e) {
-      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileOpen(false);
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
-
-  const results = query.trim()
-    ? menuItems.filter((m) => m.name.toLowerCase().includes(query.trim().toLowerCase())).slice(0, 5)
-    : [];
-
-  const submitSearch = (e) => {
-    e.preventDefault();
-    if (query.trim()) {
-      navigate(`/menu?search=${encodeURIComponent(query.trim())}`);
-      setSearchOpen(false);
-      setQuery("");
-    }
-  };
+    if (!accountOpen) return;
+    const onDown = (e) => accountRef.current && !accountRef.current.contains(e.target) && setAccountOpen(false);
+    const onKey = (e) => e.key === "Escape" && setAccountOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [accountOpen]);
 
   return (
-    <header
-      className={`sticky top-0 z-50 bg-cream/95 backdrop-blur-sm border-b transition-shadow duration-200 ${
-        scrolled ? "border-line shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_4px_16px_-8px_rgba(59,42,32,0.15)]" : "border-line/70"
-      }`}
-    >
-      <div
-        className={`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 transition-[height] duration-200 ${
-          scrolled ? "h-14" : "h-16"
-        }`}
-      >
-        <Link to="/" className="flex items-center shrink-0" aria-label="Brew & Bean home">
-          <Logo size={scrolled ? 28 : 32} />
+    <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur-sm border-b border-line">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <Link to="/" className="shrink-0" aria-label="Brew & Care home">
+          <Logo size={32} />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1.5" aria-label="Primary">
-          {navLinks.map((link) => (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className={({ isActive }) =>
-                `px-3.5 py-2 rounded-md text-sm font-medium transition-colors ${
-                  isActive ? "text-espresso bg-cream-dim" : "text-charcoal-soft hover:text-espresso hover:bg-cream-dim"
-                }`
-              }
-            >
-              {link.label}
+        <nav className="hidden lg:flex items-center" aria-label="Primary">
+          {navLinks.map((l) => (
+            <NavLink key={l.to} to={l.to} end={l.end} className={linkClass}>
+              {l.label}
             </NavLink>
           ))}
+          {extra && (
+            <>
+              <span className="mx-2 h-4 w-px bg-line" aria-hidden="true" />
+              <NavLink to={extra.to} className={linkClass}>
+                {extra.label}
+              </NavLink>
+            </>
+          )}
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <div className="relative hidden sm:block">
-            {searchOpen ? (
-              <form onSubmit={submitSearch} className="flex items-center">
-                <input
-                  ref={searchRef}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onBlur={() => setTimeout(() => setSearchOpen(false), 150)}
-                  placeholder="Search menu…"
-                  className="w-48 lg:w-64 px-3 py-1.5 rounded-full border border-line bg-white text-sm focus:outline-none focus:ring-2 focus:ring-caramel"
-                  aria-label="Search menu"
-                />
-                {results.length > 0 && (
-                  <ul className="absolute top-10 left-0 w-64 bg-white border border-line rounded-lg shadow-lg overflow-hidden">
-                    {results.map((r) => (
-                      <li key={r.id}>
-                        <button
-                          type="button"
-                          onMouseDown={() => {
-                            navigate(`/menu?search=${encodeURIComponent(r.name)}`);
-                            setSearchOpen(false);
-                            setQuery("");
-                          }}
-                          className="w-full text-left px-3 py-2 text-sm hover:bg-cream-dim flex items-center justify-between"
-                        >
-                          <span>{r.name}</span>
-                          <span className="text-charcoal-soft">₹{r.price}</span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </form>
-            ) : (
-              <button
-                onClick={() => setSearchOpen(true)}
-                aria-label="Open search"
-                className="p-2 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
-              >
-                <SearchIcon />
-              </button>
-            )}
+          <div className="hidden lg:block mr-1">
+            <RoleSwitcher />
           </div>
 
           <Link
             to="/cart"
-            aria-label={`Cart, ${itemCount} items`}
+            aria-label={`Cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
             className="relative p-2 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
           >
             <CartIcon />
             {itemCount > 0 && (
-              <span className="absolute -top-0.5 -right-0.5 bg-caramel-dark text-white text-[10px] font-semibold rounded-full w-4.5 h-4.5 min-w-[18px] h-[18px] flex items-center justify-center">
+              <span
+                key={itemCount}
+                className="absolute -top-0.5 -right-0.5 bg-caramel-dark text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center animate-fade-in nums"
+                aria-hidden="true"
+              >
                 {itemCount}
               </span>
             )}
           </Link>
 
-          <div className="relative" ref={profileRef}>
+          <div className="relative" ref={accountRef}>
             <button
-              onClick={() => setProfileOpen((o) => !o)}
-              aria-label="Account menu"
-              aria-expanded={profileOpen}
+              type="button"
+              onClick={() => setAccountOpen((o) => !o)}
+              aria-label="Account"
+              aria-expanded={accountOpen}
               className="p-2 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
             >
               <UserIcon />
             </button>
-            {profileOpen && (
-              <div className="absolute right-0 mt-2 w-52 bg-white border border-line rounded-lg shadow-lg py-1 animate-fade-in">
+            {accountOpen && (
+              <div className="absolute right-0 mt-2 w-52 bg-paper border border-line rounded-xl shadow-lg py-1 animate-fade-in">
                 {user ? (
                   <>
                     <div className="px-3 py-2 text-sm border-b border-line">
                       <p className="font-medium text-espresso truncate">{user.name}</p>
                       {user.guest && <p className="text-xs text-charcoal-soft">Guest session</p>}
                     </div>
-                    <Link to="/profile" onClick={() => setProfileOpen(false)} className="block px-3 py-2 text-sm hover:bg-cream-dim">
-                      My Profile
+                    <Link to="/profile" className="block px-3 py-2 text-sm hover:bg-cream-dim">
+                      Orders &amp; contributions
                     </Link>
                     <button
+                      type="button"
                       onClick={() => {
                         logout();
-                        setProfileOpen(false);
-                        navigate("/login");
+                        navigate("/");
                       }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-cream-dim text-red-600"
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-cream-dim text-red-700"
                     >
-                      Logout
+                      Log out
                     </button>
                   </>
                 ) : (
-                  <Link to="/login" onClick={() => setProfileOpen(false)} className="block px-3 py-2 text-sm hover:bg-cream-dim">
-                    Login
+                  <Link to="/login" className="block px-3 py-2 text-sm hover:bg-cream-dim">
+                    Log in or sign up
                   </Link>
                 )}
               </div>
@@ -187,58 +143,54 @@ export default function Navbar() {
           </div>
 
           <button
-            className="md:hidden p-2 rounded-full hover:bg-cream-dim text-charcoal-soft"
+            type="button"
+            className="lg:hidden p-2 rounded-full hover:bg-cream-dim text-charcoal-soft"
             onClick={() => setMobileOpen((o) => !o)}
-            aria-label="Toggle menu"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
+            aria-controls="mobile-nav"
           >
-            <MenuIcon />
+            {mobileOpen ? <CloseIcon /> : <MenuIcon />}
           </button>
         </div>
       </div>
 
       {mobileOpen && (
-        <nav className="md:hidden border-t border-line bg-cream animate-fade-in" aria-label="Mobile">
-          <div className="px-4 py-2 flex flex-col">
-            {navLinks.map((link) => (
+        <div id="mobile-nav" className="lg:hidden border-t border-line bg-cream max-h-[calc(100vh-4rem)] overflow-y-auto animate-fade-in">
+          <nav className="px-4 py-2 flex flex-col" aria-label="Mobile">
+            {[...navLinks, ...(extra ? [extra] : [])].map((l) => (
               <NavLink
-                key={link.to}
-                to={link.to}
-                onClick={() => setMobileOpen(false)}
+                key={l.to}
+                to={l.to}
+                end={l.end}
                 className={({ isActive }) =>
-                  `px-2 py-3 text-sm font-medium border-b border-line/60 ${isActive ? "text-espresso" : "text-charcoal-soft"}`
+                  `py-3 text-base border-b border-line/70 ${isActive ? "text-espresso font-medium" : "text-charcoal-soft"}`
                 }
               >
-                {link.label}
+                {l.label}
               </NavLink>
             ))}
+          </nav>
+          <div className="px-4 py-4">
+            <RoleSwitcherInline onDone={() => setMobileOpen(false)} />
           </div>
-        </nav>
+        </div>
       )}
     </header>
   );
 }
 
-function SearchIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="7" />
-      <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-    </svg>
-  );
-}
 function CartIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="9" cy="21" r="1" />
-      <circle cx="19" cy="21" r="1" />
-      <path d="M2.5 3h2l2.6 12.4a2 2 0 002 1.6h8.8a2 2 0 002-1.6L21 8H6" strokeLinecap="round" strokeLinejoin="round" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M5 8h14l-1.2 11.2a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8L5 8z" strokeLinejoin="round" />
+      <path d="M9 8V6.5a3 3 0 016 0V8" strokeLinecap="round" />
     </svg>
   );
 }
 function UserIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
       <circle cx="12" cy="8" r="4" />
       <path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6" strokeLinecap="round" />
     </svg>
@@ -246,8 +198,15 @@ function UserIcon() {
 }
 function MenuIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M4 7h16M4 12h16M4 17h10" strokeLinecap="round" />
+    </svg>
+  );
+}
+function CloseIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+      <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
     </svg>
   );
 }

@@ -1,50 +1,61 @@
+import { Link } from "react-router-dom";
+import { PageHeader } from "../components/ui";
+import { btn, container } from "../lib/styles";
+
 const offers = [
   {
-    title: "Morning Coffee Combo",
-    code: "MORNING",
-    text: "Any regular coffee + a grilled sandwich for ₹240, available till 11 AM every day.",
-    tag: "Daily · Before 11 AM",
-  },
-  {
-    title: "Student Combo",
+    title: "Student combo",
     code: "STUDENT10",
-    text: "Show your student ID and get 10% off on combo orders above ₹200.",
-    tag: "All day, every day",
+    text: "10% off your order. Show your college ID at pickup.",
+    when: "All day, every day",
+    applies: true,
   },
   {
-    title: "Buy 2 Get 1",
-    code: "B2G1",
-    text: "Order any 2 cold drinks and get a third one free — mix and match.",
-    tag: "Weekdays only",
-  },
-  {
-    title: "Weekend Special",
+    title: "Weekend treat",
     code: "BREW20",
-    text: "20% off your total bill on weekends when you order 3 or more items.",
-    tag: "Sat – Sun",
+    text: "20% off the whole bill on Saturdays and Sundays.",
+    when: "Sat – Sun",
+    applies: true,
+  },
+  {
+    title: "Morning coffee combo",
+    text: "Any regular coffee with a veg grilled sandwich for ₹240. It's on the menu under Breakfast.",
+    when: "Before 11 AM",
+  },
+  {
+    title: "Evening bakery",
+    text: "After 8 PM, whatever's left in the bakery cabinet is ₹20 off. What still doesn't sell goes to our partners.",
+    when: "After 8 PM, in the café",
   },
 ];
 
 export default function Offers() {
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <div className="mb-8">
-        <h1 className="font-serif-display text-3xl text-espresso">Offers</h1>
-        <p className="text-charcoal-soft text-sm mt-1">Apply these codes at checkout or in your cart.</p>
-      </div>
+    <div className={`${container} py-10 max-w-4xl`}>
+      <PageHeader eyebrow="Offers" title="A few ways to pay a little less.">
+        Codes can be applied in your cart.
+      </PageHeader>
 
-      <div className="grid sm:grid-cols-2 gap-5">
+      <ul className="divide-y divide-line border-y border-line">
         {offers.map((o) => (
-          <div key={o.title} className="bg-white border border-line rounded-xl p-5">
-            <div className="flex items-start justify-between gap-3">
+          <li key={o.title} className="py-5 grid sm:grid-cols-[1fr_auto] gap-3 sm:items-center">
+            <div>
               <h2 className="font-medium text-espresso">{o.title}</h2>
-              <span className="text-xs font-mono px-2 py-1 rounded bg-cream-dim text-caramel-dark whitespace-nowrap">{o.code}</span>
+              <p className="text-sm text-charcoal-soft mt-1 leading-relaxed">{o.text}</p>
+              <p className="text-xs text-charcoal-soft mt-2">{o.when}</p>
             </div>
-            <p className="text-sm text-charcoal-soft mt-2 leading-relaxed">{o.text}</p>
-            <p className="text-xs text-charcoal-soft mt-3 uppercase tracking-wide">{o.tag}</p>
-          </div>
+            {o.code && (
+              <span className="justify-self-start sm:justify-self-end font-mono text-sm px-3 py-1.5 rounded-md border border-dashed border-caramel/60 text-caramel-dark">
+                {o.code}
+              </span>
+            )}
+          </li>
         ))}
-      </div>
+      </ul>
+
+      <Link to="/menu" className={`${btn.primary} mt-8`}>
+        Start an order
+      </Link>
     </div>
   );
 }

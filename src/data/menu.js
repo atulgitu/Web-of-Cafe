@@ -2,7 +2,7 @@
 // so every item always renders a real, matching food/drink photo — never a blank placeholder.
 const img = (id) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=600&q=80`;
 
-export const categories = ["Coffee", "Cold Drinks", "Tea", "Snacks", "Desserts", "Combos"];
+
 
 const coffeeImg = {
   filter: img("photo-1497935586351-b67a49e012bf"),
@@ -53,7 +53,7 @@ const dessertImg = {
 
 const comboImg = img("photo-1495474472287-4d71bcdd2085");
 
-export const menuItems = [
+const baseItems = [
   // ---- Coffee ----
   {
     id: "c1",
@@ -820,5 +820,145 @@ export const menuItems = [
     addons: [],
   },
 ];
+
+
+// ---- Brew & Care additions ----
+
+const extraImg = {
+  eggsToast: img("photo-1525351484163-7529414344d8"),
+  oats: img("photo-1517673400267-0251440c45dc"),
+  curry: img("photo-1585937421612-70a008356fbe"),
+  bowl: img("photo-1546069901-ba9599a7e63c"),
+  rice: img("photo-1512058564366-18510be2db19"),
+};
+
+const newItems = [
+  {
+    id: "b1",
+    name: "Akuri on Sourdough",
+    category: "Breakfast",
+    description: "Parsi-style spiced scrambled eggs with green chilli and coriander on toasted sourdough.",
+    price: 190,
+    veg: false,
+    rating: 4.6,
+    popularity: 74,
+    image: extraImg.eggsToast,
+    sizes: ["Regular"],
+    addons: ["Extra egg (+₹30)", "Side salad (+₹40)"],
+  },
+  {
+    id: "b2",
+    name: "Overnight Oats & Banana",
+    category: "Breakfast",
+    description: "Rolled oats soaked overnight in milk with banana, honey and a handful of toasted seeds.",
+    price: 150,
+    veg: true,
+    rating: 4.4,
+    popularity: 61,
+    image: extraImg.oats,
+    sizes: ["Regular"],
+    addons: ["Oat milk (+₹30)", "Peanut butter (+₹25)"],
+  },
+  {
+    id: "m1",
+    name: "Rajma Chawal Bowl",
+    category: "Meals",
+    description: "Slow-cooked kidney beans in a tomato-onion gravy over jeera rice, with pickled onions.",
+    price: 220,
+    veg: true,
+    rating: 4.7,
+    popularity: 90,
+    image: extraImg.curry,
+    sizes: ["Regular", "Large"],
+    addons: ["Extra rice (+₹30)", "Curd (+₹25)"],
+  },
+  {
+    id: "m2",
+    name: "Grilled Chicken Rice Bowl",
+    category: "Meals",
+    description: "Herb-marinated grilled chicken, lemon rice, sautéed greens and a garlic yoghurt dressing.",
+    price: 280,
+    veg: false,
+    rating: 4.6,
+    popularity: 79,
+    image: extraImg.bowl,
+    sizes: ["Regular", "Large"],
+    addons: ["Extra chicken (+₹70)"],
+  },
+  {
+    id: "m3",
+    name: "Veg Pulao with Raita",
+    category: "Meals",
+    description: "Fragrant basmati pulao cooked with seasonal vegetables and whole spices, served with cucumber raita.",
+    price: 200,
+    veg: true,
+    rating: 4.5,
+    popularity: 68,
+    image: extraImg.rice,
+    sizes: ["Regular", "Large"],
+    addons: ["Papad (+₹15)"],
+  },
+];
+
+// Category and labels for each item. Anything not listed keeps its original category.
+const recategorize = {
+  s1: "Breakfast",
+  combo1: "Breakfast",
+  combo5: "Breakfast",
+  s2: "Meals",
+  s3: "Meals",
+  s9: "Meals",
+  s10: "Meals",
+  s11: "Meals",
+  Desserts: "Bakery",
+};
+
+const labels = {
+  // high protein
+  b1: ["high-protein"],
+  m1: ["high-protein", "low-waste"],
+  m2: ["high-protein"],
+  s2: ["high-protein"],
+  s3: ["high-protein"],
+  // low waste picks: dishes built around ingredients that would otherwise be thrown away
+  m3: ["low-waste"],
+  s6: ["low-waste"],
+  d5: ["low-waste"],
+};
+
+// Why an item is a low-waste pick — shown in the item details.
+const lowWasteNotes = {
+  m1: "We cook rajma in measured batches from the daily forecast, and unsold bowls go to community partners.",
+  m3: "Uses vegetable trim from the sandwich station, so less goes in the bin.",
+  s6: "Made from yesterday's sourdough loaves.",
+  d5: "Croissants left at closing are listed for community pickup the same evening.",
+};
+
+// Limited daily batches. Only a few items have these, so the hint stays meaningful.
+const dailyBatch = {
+  d5: { left: 3, note: "Baked this morning" },
+  d2: { left: 4, note: "Made this morning" },
+  d4: { left: 5, note: "Baked this morning" },
+};
+
+export const categories = ["Coffee", "Cold Drinks", "Tea", "Breakfast", "Meals", "Snacks", "Bakery", "Combos"];
+
+export const menuItems = [...baseItems, ...newItems].map((item) => {
+  const category = recategorize[item.id] || recategorize[item.category] || item.category;
+  const tags = [...(item.popularity >= 90 ? ["popular"] : []), ...(labels[item.id] || [])];
+  return {
+    ...item,
+    category,
+    tags,
+    lowWasteNote: lowWasteNotes[item.id] || null,
+    batch: dailyBatch[item.id] || null,
+  };
+});
+
+export const TAGS = {
+  popular: { label: "Popular", tone: "caramel" },
+  "high-protein": { label: "High protein", tone: "neutral" },
+  "low-waste": { label: "Low-waste pick", tone: "leaf" },
+};
 
 export const getItemById = (id) => menuItems.find((m) => m.id === id);

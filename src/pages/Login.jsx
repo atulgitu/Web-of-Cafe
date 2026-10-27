@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useToast } from "../context/ToastContext";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth, useToast } from "../hooks/useAppContext";
 import Logo from "../components/Logo";
 
 export default function Login() {
@@ -18,6 +17,7 @@ export default function Login() {
   const { login, loginAsGuest, signup } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
+  const from = useLocation().state?.from || "/";
 
   const validate = () => {
     const errs = {};
@@ -40,9 +40,9 @@ export default function Login() {
         showToast("Welcome back!");
       } else {
         await signup(name, email, password);
-        showToast("Account created — welcome to Brew & Bean!");
+        showToast("Account created — welcome to Brew & Care");
       }
-      navigate("/");
+      navigate(from, { replace: true });
     } catch {
       setErrors({ form: "Something went wrong. Please try again." });
     } finally {
@@ -55,12 +55,12 @@ export default function Login() {
     setTimeout(() => {
       loginAsGuest();
       showToast("Browsing as guest");
-      navigate("/");
+      navigate(from, { replace: true });
     }, 350);
   };
 
   const handleGoogle = () => {
-    showToast("Google login is a demo placeholder for this project");
+    showToast("Google sign-in isn't part of this prototype — use email or continue as a guest");
   };
 
   return (
@@ -82,12 +82,12 @@ export default function Login() {
 
           <div className="animate-fade-in max-w-md" style={{ animationDelay: "80ms" }}>
             <p className="font-serif-display text-2xl sm:text-4xl leading-[1.2] tracking-tight">
-              Made fresh.
+              Good coffee,
               <br />
-              Served with warmth.
+              and nothing good wasted.
             </p>
             <p className="mt-3 text-cream/80 text-sm sm:text-base tracking-wide">
-              Good coffee. Better moments.
+              Brew & Care · Indiranagar, Bengaluru
             </p>
           </div>
         </div>
@@ -101,7 +101,7 @@ export default function Login() {
           </div>
           <div className="hidden lg:block mb-8">
             <span className="text-xs font-semibold tracking-[0.14em] uppercase text-caramel-dark">
-              Brew & Bean
+              Brew &amp; Care
             </span>
           </div>
 
@@ -110,8 +110,8 @@ export default function Login() {
           </h1>
           <p className="mt-2 text-sm text-charcoal-soft leading-relaxed">
             {mode === "login"
-              ? "Your next great coffee is just a login away."
-              : "Join us for faster checkout and member offers."}
+              ? "Log in to check out faster and see your orders."
+              : "Save your orders and see the meals your contributions helped fund."}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-7 space-y-4" noValidate>
@@ -236,7 +236,7 @@ export default function Login() {
           <p className="mt-5 text-center text-sm text-charcoal-soft">
             {mode === "login" ? (
               <>
-                New to Brew & Bean?{" "}
+                New to Brew & Care?{" "}
                 <button onClick={() => setMode("signup")} className="text-caramel-dark font-medium hover:underline">
                   Create an account
                 </button>

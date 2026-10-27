@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useState } from "react";
-
-const ToastContext = createContext(null);
+import { useCallback, useState } from "react";
+import { ToastContext } from "./contexts";
 
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
@@ -10,22 +9,23 @@ export function ToastProvider({ children }) {
     setToasts((t) => [...t, { id, message, type }]);
     setTimeout(() => {
       setToasts((t) => t.filter((x) => x.id !== id));
-    }, 2800);
+    }, 3200);
   }, []);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
-      <div className="fixed bottom-5 right-5 z-[100] flex flex-col gap-2 items-end">
+      <div
+        className="fixed bottom-24 md:bottom-5 inset-x-4 md:inset-x-auto md:right-5 z-[100] flex flex-col gap-2 items-center md:items-end pointer-events-none"
+        role="status"
+        aria-live="polite"
+      >
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`animate-toast-in px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-xs border ${
-              t.type === "error"
-                ? "bg-white text-red-700 border-red-200"
-                : "bg-espresso text-cream border-espresso-light"
+            className={`animate-toast-in px-4 py-3 rounded-lg shadow-lg text-sm font-medium max-w-sm border ${
+              t.type === "error" ? "bg-paper text-red-800 border-red-200" : "bg-espresso text-cream border-espresso-light"
             }`}
-            role="status"
           >
             {t.message}
           </div>
@@ -34,5 +34,3 @@ export function ToastProvider({ children }) {
     </ToastContext.Provider>
   );
 }
-
-export const useToast = () => useContext(ToastContext);

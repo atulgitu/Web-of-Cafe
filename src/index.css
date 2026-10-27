@@ -6,14 +6,17 @@
 
   --color-cream: #FAF6EF;
   --color-cream-dim: #F1E9DB;
+  --color-paper: #FFFDF9;
   --color-espresso: #3B2A20;
   --color-espresso-light: #5C4433;
   --color-caramel: #C08552;
-  --color-caramel-dark: #A66B3A;
+  --color-caramel-dark: #9A5F31;
   --color-sage: #8A9A7B;
   --color-sage-dark: #6E7E5F;
+  --color-leaf: #3F5B3A;
+  --color-leaf-soft: #E5EBDD;
   --color-charcoal: #2B2724;
-  --color-charcoal-soft: #524A44;
+  --color-charcoal-soft: #564D46;
   --color-line: #E4D9C7;
 }
 
@@ -35,6 +38,12 @@ body {
 
 .font-serif-display {
   font-family: var(--font-serif);
+  font-optical-sizing: auto;
+}
+
+/* Tabular figures for anything numeric that sits in a column */
+.nums {
+  font-variant-numeric: tabular-nums;
 }
 
 /* focus ring consistent across interactive elements */
@@ -43,13 +52,32 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
+summary:focus-visible,
 [tabindex]:focus-visible {
   outline: 2px solid var(--color-caramel-dark);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -3rem;
+  z-index: 200;
+  background: var(--color-espresso);
+  color: var(--color-cream);
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+.skip-link:focus {
+  top: 0.75rem;
+}
+
 /* subtle custom scrollbar for horizontal scrollers */
+.scroll-thin {
+  scrollbar-width: thin;
+}
 .scroll-thin::-webkit-scrollbar {
   height: 6px;
 }
@@ -75,18 +103,38 @@ textarea:focus-visible,
 }
 
 @keyframes fade-in-up {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-up {
-  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: fade-in-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@keyframes pop {
-  0% { transform: scale(1); }
-  40% { transform: scale(1.18); }
-  100% { transform: scale(1); }
+@keyframes sheet-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
-.animate-pop {
-  animation: pop 0.28s ease-out;
+.animate-sheet-up {
+  animation: sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.animate-pulse-soft {
+  animation: pulse-soft 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -5,17 +5,23 @@ import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";
+import { RescueProvider } from "./context/RescueContext";
+import { RoleProvider } from "./context/RoleContext";
 import { ToastProvider } from "./context/ToastContext";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <CartProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </CartProvider>
+        <RoleProvider>
+          <RescueProvider>
+            <CartProvider>
+              <ToastProvider>
+                <App />
+              </ToastProvider>
+            </CartProvider>
+          </RescueProvider>
+        </RoleProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>
