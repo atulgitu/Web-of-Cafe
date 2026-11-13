@@ -220,6 +220,38 @@ TESTING_REPORT.md section 3b.
 
 ---
 
+### Issue 10 — 63 menu items, 32 photos: most products showed someone else's picture
+
+**Original problem:** All six combos (Student Combo, Dessert Duo, Chai & Puff, Movie Night, Morning Coffee, Breakfast
+Box) showed the homepage hero photo of three coffee cups. Elsewhere one latte photo was used for four drinks,
+including Cold Brew. Cheese Garlic Bread and Loaded Potato Wedges showed the fries photo. Three different teas
+shared a green-tea photo, and every quesadilla and sandwich shared one of two pictures. In total, 63 products
+used only 32 images. The seed file even had a comment claiming every item had "a real, matching photo".
+
+**Where it occurred:** `server/src/db/seed-data/menu.js` (the source of the menu in the database). All images
+were hotlinked from an external CDN.
+
+**Why it matters:** Wrong photos make a menu untrustworthy, and on a food site the photo is often what people
+decide on. Repeated stock photos are also the most obvious sign of a generated template. Hotlinked images can
+disappear at any time.
+
+**How it was discovered:** A user noticed the combos. I then listed every product with its image ID and counted
+how often each image was reused, rather than fixing only the four visible cards.
+
+**Fix implemented:**
+- I searched Wikimedia Commons for every product and kept only freely licensed photos (CC0, CC BY, CC BY-SA, public domain).
+- I chose each photo by eye from numbered contact sheets, rejecting wrong matches: the "iced americano" search mostly returned the rapper Ice-T, and one "potato wedges" photo had meat on a vegetarian item.
+- Combo photos are made from the photos of the items in the combo, side by side (e.g. Masala Chai | Veg Puff).
+- Each photo is cropped to 4:3 and saved in the project as a 640×480 WebP (21–85 KB, about 26 KB on average), so nothing is hotlinked any more.
+- Each product has its own alt text, stored in the database next to the image.
+- Every author is credited in IMAGE_CREDITS.md and on a /credits page.
+- A deploy step copies corrected menu wording and photos onto an existing database without wiping orders.
+
+**Result:** 63 products, 63 different images, all loading at every tested width, with no duplicates and no
+fallbacks used (verified in the browser). See `docs/evidence/after/menu-combos-1280.png` and `all-menu-photos.jpg`.
+
+---
+
 ## Strongest five for the presentation
 
 1. **Live numbers error** (Issue 1): a real root cause, found by tracing the request. A good story about not just hiding errors.

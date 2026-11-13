@@ -69,7 +69,7 @@ export default function ProductModal({ item, onClose }) {
         className="bg-cream w-full sm:max-w-2xl sm:rounded-2xl rounded-t-2xl max-h-[92vh] overflow-y-auto shadow-2xl animate-sheet-up"
       >
         <div className="relative">
-          <FoodImage src={item.image} alt={item.name} eager className="w-full h-52 sm:h-64 object-cover sm:rounded-t-2xl" />
+          <FoodImage src={item.image} alt={item.imageAlt || item.name} eager className="w-full h-52 sm:h-64 object-cover sm:rounded-t-2xl" />
           <button
             ref={closeRef}
             type="button"

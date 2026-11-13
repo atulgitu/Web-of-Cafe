@@ -11,6 +11,7 @@ import About from "./pages/About";
 import Cart from "./pages/Cart";
 import Checkout from "./pages/Checkout";
 import Contact from "./pages/Contact";
+import Credits from "./pages/Credits";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Impact from "./pages/Impact";
@@ -37,6 +38,7 @@ const titles = {
   "/checkout": `Checkout · ${BRAND}`,
   "/profile": `Your account · ${BRAND}`,
   "/login": `Sign in · ${BRAND}`,
+  "/credits": `Photo credits · ${BRAND}`,
   "/forgot-password": `Reset your password · ${BRAND}`,
   "/offers": `Offers · ${BRAND}`,
   "/contact": `Contact · ${BRAND}`,
@@ -95,6 +97,7 @@ export default function App() {
             <Route path="/offers" element={<Offers />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/credits" element={<Credits />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ErrorBoundary>

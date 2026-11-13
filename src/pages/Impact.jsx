@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import ActivityFeed from "../components/rescue/ActivityFeed";
-import { DemoNote, ErrorState, PageHeader, Skeleton, Stat } from "../components/ui";
+import { Note, ErrorState, PageHeader, Skeleton, Stat } from "../components/ui";
 import WeeklyChart from "../components/WeeklyChart";
 import useApi from "../hooks/useApi";
 import { formatKg, formatNumber, formatRupees } from "../lib/format";
@@ -26,10 +26,10 @@ export default function Impact() {
         such.
       </PageHeader>
 
-      <DemoNote label="Sample data" className="mb-6 max-w-2xl">
+      <Note label="Sample data" className="mb-6 max-w-2xl">
         The partner organisations, past pickups and contributions on this page are sample records. The totals are calculated
         from them, and new pickups and contributions are added as they happen.
-      </DemoNote>
+      </Note>
 
       <div className="flex flex-wrap items-center gap-2 mb-6" role="group" aria-label="Time period">
         {periods.map((x) => (

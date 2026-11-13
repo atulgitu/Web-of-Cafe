@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ListingCard from "../components/rescue/ListingCard";
 import RoleGate from "../components/RoleGate";
-import { DemoNote, EmptyState, ErrorState, Skeleton, Spinner, Stat } from "../components/ui";
+import { Note, EmptyState, ErrorState, Skeleton, Spinner, Stat } from "../components/ui";
 import { CAFE } from "../data/site";
 import useApi from "../hooks/useApi";
 import { useToast } from "../hooks/useAppContext";
@@ -204,7 +204,7 @@ function PartnerDashboard() {
             )}
           </section>
 
-          <DemoNote>Partner organisations on this site are sample data. Text alerts for new listings aren't built yet; check this page after the lunch and evening rush.</DemoNote>
+          <Note>Partner organisations on this site are sample data. Text alerts for new listings aren't built yet; check this page after the lunch and evening rush.</Note>
         </aside>
       </div>
     </div>

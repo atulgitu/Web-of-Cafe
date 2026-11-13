@@ -8,7 +8,7 @@
     "api/[...path].js": { "maxDuration": 30 }
   },
   "rewrites": [
-    { "source": "/((?!api/|assets/|icons/|sw\\.js|manifest\\.webmanifest|icon\\.svg|placeholder-food\\.svg).*)", "destination": "/index.html" }
+    { "source": "/((?!api/|assets/|menu/|images/|icons/|sw\\.js|manifest\\.webmanifest|icon\\.svg|placeholder-food\\.svg).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
@@ -21,6 +21,10 @@
     {
       "source": "/manifest.webmanifest",
       "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }]
+    },
+    {
+      "source": "/(menu|images)/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }]
     },
     {
       "source": "/assets/(.*)",

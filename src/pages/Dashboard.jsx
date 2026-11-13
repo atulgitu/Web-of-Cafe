@@ -5,7 +5,7 @@ import ListingCard from "../components/rescue/ListingCard";
 import ListingForm from "../components/rescue/ListingForm";
 import MatchList from "../components/rescue/MatchList";
 import RoleGate from "../components/RoleGate";
-import { DemoNote, ErrorState, PageHeader, Skeleton, Spinner, Stat } from "../components/ui";
+import { Note, ErrorState, PageHeader, Skeleton, Spinner, Stat } from "../components/ui";
 import useApi from "../hooks/useApi";
 import { useToast } from "../hooks/useAppContext";
 import useOnline from "../hooks/useOnline";
@@ -142,7 +142,7 @@ function StaffDashboard() {
                 <strong className="font-semibold text-leaf">{forecast.data.totals.portionsSaved} fewer portions</strong> made tomorrow (
                 {forecast.data.totals.recommendedPrep} instead of {forecast.data.totals.usualPrep}).
               </p>
-              <DemoNote label="Method" className="md:max-w-xs">{forecast.data.method}. Not a trained ML model.</DemoNote>
+              <Note label="Method" className="md:max-w-xs">{forecast.data.method}. Not a trained ML model.</Note>
             </div>
           </>
         )}

@@ -10,6 +10,7 @@ export const toMenuItem = (r) => ({
   rating: r.rating,
   popularity: r.popularity,
   image: r.image,
+  imageAlt: r.image_alt,
   sizes: r.sizes,
   addons: r.addons,
   tags: r.tags,

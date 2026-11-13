@@ -12,7 +12,8 @@ import { cafeStatus } from "../lib/hours";
 import { btn, container } from "../lib/styles";
 
 const FEATURED = ["c1", "m1", "d5", "cd1"];
-const HERO_IMAGE = "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=1100&q=80";
+// Stored in the project (public/images), not linked from another site, so it can't disappear.
+const HERO_IMAGE = "/images/hero-cappuccinos.webp";
 
 const flow = [
   { side: "cafe", title: "You order", text: "Coffee, breakfast, a rajma bowl at lunch — nothing changes at the counter." },
@@ -65,7 +66,7 @@ export default function Home() {
         </div>
 
         <figure className="relative animate-fade-in-up" style={{ animationDelay: "80ms" }}>
-          <FoodImage src={HERO_IMAGE} alt="Two cappuccinos and a croissant on a wooden café table" eager className="w-full h-64 sm:h-96 lg:h-[30rem] object-cover rounded-2xl" />
+          <FoodImage src={HERO_IMAGE} alt="Three cups of coffee with latte art being raised together over a table" eager width={1100} height={800} className="w-full h-64 sm:h-96 lg:h-[30rem] object-cover rounded-2xl" />
           {data && data.board.rescuedToday > 0 && (
             <span className="absolute top-3 left-3 rounded-full bg-paper/95 px-3 py-1 text-xs font-medium text-leaf">
               {data.board.rescuedToday} portions rescued today

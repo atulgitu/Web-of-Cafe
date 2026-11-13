@@ -25,6 +25,7 @@ const columns = [
       { to: "/about", label: "About the café" },
       { to: "/about#forecast", label: "How the forecast works" },
       { to: "/about#status", label: "What's real and what's sample data" },
+      { to: "/credits", label: "Photo credits" },
     ],
   },
 ];

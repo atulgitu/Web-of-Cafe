@@ -12,7 +12,7 @@
 //   • Cache private API responses (orders, account, dashboard) — only the public
 //     endpoints listed in PUBLIC_API, which return the same data for everyone.
 
-const VERSION = "cc-v2"; // bump when cached API shapes change
+const VERSION = "cc-v3"; // bump when cached API shapes change
 const SHELL = `${VERSION}-shell`;
 const RUNTIME = `${VERSION}-runtime`;
 const SHELL_FILES = ["/", "/index.html", "/manifest.webmanifest", "/icon.svg", "/icons/icon-192.png", "/placeholder-food.svg"];
@@ -61,8 +61,8 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(fetch(request).catch(() => caches.match("/index.html")));
     return;
   }
-  // Hashed build assets never change, so cache-first is safe.
-  if (url.origin === location.origin && url.pathname.startsWith("/assets/")) {
+  // Hashed build assets and product photos never change in place, so cache-first is safe.
+  if (url.origin === location.origin && /^/(assets|menu|images)//.test(url.pathname)) {
     event.respondWith(cacheFirst(request));
     return;
   }

@@ -106,6 +106,21 @@ Tested in Chrome against the local API after the demo role switcher was removed.
 | `/login` at 320, 375, 390, 768, 1024, 1440px: no overflow, labels on every input, one h1, one main | PASS |
 | API test: customers and partners get 403 on staff endpoints (`/dashboard`, `/orders/today`, `/contact`, `/demo/reset`) | PASS (27/27 API checks) |
 
+## 3c. Menu photos and product cards
+
+| Test | Result |
+| --- | --- |
+| Every product has its own photo (63 products, 63 files, no duplicate image paths) | FIXED (was 32 photos for 63 products; all 6 combos used the home hero photo) |
+| All 63 photos load at 320, 375, 390, 768, 1024 and 1440px; none fall back to the placeholder | PASS |
+| Every card image has alt text describing the photo (e.g. "Masala chai and a veg puff") | FIXED (cards used empty alt) |
+| Same 4:3 ratio and `object-fit: cover` on every card; cards in a row line up | PASS |
+| Price and Add button fully visible on every card; names not clipped; 2 columns on phones, 3 at 768px, 4 from 1024px | PASS |
+| Photo files are 21–85 KB WebP and lazy-loaded below the fold | PASS |
+| A missing image falls back to the neutral cup outline, not another product's photo | PASS |
+| Card descriptions are cut to 2 lines; the full text is in the item popup (checked for Student Combo) | PASS |
+| Combo order: Student Combo + 2 × Chai & Puff (changed from 3 in the cart) + Brownie → ₹640 + ₹32 tax = ₹672; WhatsApp link to wa.me/919708012106 with matching lines, order ID and customer details | PASS |
+| Menu header said "Order for pickup or delivery" although delivery was removed | FIXED |
+
 ## 4. Keyboard
 
 | Test | Result |

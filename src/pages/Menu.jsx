@@ -54,7 +54,7 @@ export default function Menu() {
 
   return (
     <div className={`${container} py-10`}>
-      <PageHeader eyebrow="Order for pickup or delivery" title="Menu">
+      <PageHeader eyebrow="Order ahead for pickup" title="Menu">
         Coffee roasted in Chikmagalur, breakfast till noon, and meals cooked in forecast-sized batches.
         {fromCache && error && <span className="block text-sm mt-1">Showing the menu saved on this device — prices are confirmed when you order.</span>}
       </PageHeader>

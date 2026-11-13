@@ -73,6 +73,14 @@ customers back to where they were.
 
 Coupon codes: `STUDENT10` (any day) and `CINNAMON20` (Saturdays and Sundays only).
 
+## Photos
+
+Menu photos are stored in `public/menu/<product id>.webp` (640×480 WebP). The home and sign-in photos are in
+`public/images/`. Sources and licences are listed in [IMAGE_CREDITS.md](IMAGE_CREDITS.md) and on the site's
+/credits page. Each product's photo path and alt text live in `server/src/db/seed-data/menu.js`. On every
+production build, `server/scripts/setup-db.js` copies the menu wording and photos onto the existing database,
+without touching orders, prices or stock.
+
 ## Checks
 
 ```bash

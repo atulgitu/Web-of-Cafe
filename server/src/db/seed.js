@@ -73,9 +73,9 @@ export async function seed({ log = console.log, now = new Date() } = {}) {
 
     for (const m of menu) {
       await db.query(
-        `INSERT INTO menu_items (id, name, category, description, price, veg, rating, popularity, image, sizes, addons, tags, low_waste_note, batch_note, batch_left)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
-        [m.id, m.name, m.category, m.description, m.price, m.veg, m.rating, m.popularity, m.image, JSON.stringify(m.sizes),
+        `INSERT INTO menu_items (id, name, category, description, price, veg, rating, popularity, image, image_alt, sizes, addons, tags, low_waste_note, batch_note, batch_left)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+        [m.id, m.name, m.category, m.description, m.price, m.veg, m.rating, m.popularity, m.image, m.imageAlt, JSON.stringify(m.sizes),
           JSON.stringify(m.addons), m.tags, m.lowWasteNote, m.batch?.note ?? null, m.batch?.left ?? null]
       );
     }

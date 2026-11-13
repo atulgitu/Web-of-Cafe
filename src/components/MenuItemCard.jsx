@@ -28,7 +28,7 @@ export default function MenuItemCard({ item, onOpen }) {
   return (
     <article className="group relative flex flex-col bg-paper border border-line rounded-xl overflow-hidden transition-shadow duration-200 hover:shadow-[0_6px_20px_-12px_rgba(59,42,32,0.35)]">
       <div className="relative aspect-[4/3] overflow-hidden">
-        <FoodImage src={item.image} alt="" className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${soldOut ? "grayscale opacity-70" : ""}`} />
+        <FoodImage src={item.image} alt={item.imageAlt || item.name} className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03] ${soldOut ? "grayscale opacity-70" : ""}`} />
         {item.batch && (
           <span className={`absolute bottom-2 left-2 rounded-full bg-paper/95 px-2.5 py-1 text-[11px] font-medium ${soldOut ? "text-charcoal" : "text-caramel-dark"}`}>
             {soldOut ? "Sold out today" : `${left} left today`}

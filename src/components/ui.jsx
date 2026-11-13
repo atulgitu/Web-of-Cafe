@@ -121,7 +121,7 @@ export function Spinner() {
 }
 
 // A quiet, consistent marker for sample data or simplified features.
-export function DemoNote({ children, className = "", label = "Note" }) {
+export function Note({ children, className = "", label = "Note" }) {
   return (
     <p className={`flex gap-2 text-xs text-charcoal-soft leading-relaxed ${className}`}>
       <span className="shrink-0 rounded border border-line bg-paper px-1.5 py-px font-semibold tracking-wide uppercase text-[10px] text-charcoal-soft">

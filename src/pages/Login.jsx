@@ -76,7 +76,7 @@ export default function Login() {
       {/* Photo and welcome: wide screens only. Phones get the logo and the form. */}
       <div className="relative hidden lg:block">
         <FoodImage
-          src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=1400&q=80"
+          src="/images/pour-over.webp"
           alt=""
           eager
           className="absolute inset-0 w-full h-full object-cover"
