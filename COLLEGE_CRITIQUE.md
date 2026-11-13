@@ -197,6 +197,29 @@ genuinely calculated from the database, and they go up when you complete a picku
 
 ---
 
+### Issue 9 — The "demo role switcher" published the staff password
+
+**Original problem:** The navbar had a "Demo · Switch role" menu that signed you in as a customer, café staff member
+or community partner with one click. To do that, the browser called a public endpoint, `GET /api/demo/accounts`,
+which returned every sample account **and the shared password**.
+
+**Where it occurred:** `src/components/DemoSwitcher.jsx`, `server/src/controllers/demoController.js`
+
+**Why it matters:** Anyone could open that URL, read the password and sign in as café staff, which on the live site
+means seeing real customers' names and phone numbers and changing their orders. The server's role checks were
+correct, but they didn't help once the staff password was public. It also made the site feel like a demo.
+
+**How it was discovered:** Reading the network requests made on page load while preparing the site for deployment.
+
+**Fix implemented:** I removed the switcher and the endpoint. Sign-in is now a normal email and password form, and the
+role comes only from the database. Public sign-up always creates a customer, even if `role: "STAFF"` is sent to the
+API directly. In production the sample accounts' passwords come from environment variables, not from Git.
+
+**Result:** `/api/demo/accounts` returns 404. Customers and partners get 403 on every staff endpoint. Tested in
+TESTING_REPORT.md section 3b.
+
+---
+
 ## Strongest five for the presentation
 
 1. **Live numbers error** (Issue 1): a real root cause, found by tracing the request. A good story about not just hiding errors.

@@ -2,7 +2,7 @@ import { useState } from "react";
 
 const FALLBACK = "/placeholder-food.svg";
 
-// Remote photos can fail (offline demo, blocked CDN); fall back to a neutral cup.
+// Remote photos can fail (offline, blocked CDN); fall back to a neutral cup.
 export default function FoodImage({ src, alt, className = "", eager = false }) {
   const [failed, setFailed] = useState(false);
   return (

@@ -142,7 +142,7 @@ function StaffDashboard() {
                 <strong className="font-semibold text-leaf">{forecast.data.totals.portionsSaved} fewer portions</strong> made tomorrow (
                 {forecast.data.totals.recommendedPrep} instead of {forecast.data.totals.usualPrep}).
               </p>
-              <DemoNote className="md:max-w-xs">{forecast.data.method}. Not a trained ML model.</DemoNote>
+              <DemoNote label="Method" className="md:max-w-xs">{forecast.data.method}. Not a trained ML model.</DemoNote>
             </div>
           </>
         )}

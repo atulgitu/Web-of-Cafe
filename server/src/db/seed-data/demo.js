@@ -15,7 +15,7 @@ export const partners = [
     window_start: H(11),
     window_end: H(21),
     veg_only: false,
-    contact: "Lakshmi R. · +91 98450 11234",
+    contact: "Priya Singh · +91 98450 11234",
     note: "Serves lunch and an evening meal to around 60 people. Has a van, so they can come most of the day.",
   },
   {
@@ -29,7 +29,7 @@ export const partners = [
     window_start: H(12),
     window_end: H(19, 30),
     veg_only: true,
-    contact: "Joseph M. · +91 99001 45678",
+    contact: "Aditya Kumar · +91 99001 45678",
     note: "Vegetarian kitchen. Prefers food that can be served the same evening.",
   },
   {
@@ -62,17 +62,24 @@ export const partners = [
   },
 ];
 
-export const DEMO_PASSWORD = "cinnamon123";
+// Sample accounts, one per role, used for development and for testing the live site.
+// They are NOT offered anywhere in the website: you log in with the email and password
+// like any other account. Roles live in the database and can't be chosen when signing up.
+//
+// Passwords: locally they default to DEV_PASSWORD below. A production database is seeded
+// with SAMPLE_ACCOUNT_PASSWORD and STAFF_PASSWORD from the environment instead (see seed.js),
+// so the live site's accounts don't use a password that is visible in Git.
+export const DEV_PASSWORD = "cinnamon123";
 
-export const DEMO_ACCOUNTS = [
-  { name: "Ananya Rao", email: "customer@coffeecinnamon.in", role: "CUSTOMER", phone: "+91 98765 43210" },
-  { name: "Farhan Sheikh", email: "staff@coffeecinnamon.in", role: "STAFF", phone: "+91 80 4567 1234" },
-  { name: "Lakshmi R.", email: "partner@coffeecinnamon.in", role: "PARTNER", partner_id: "p1" },
-  { name: "Joseph M.", email: "hope@coffeecinnamon.in", role: "PARTNER", partner_id: "p2" },
+export const SAMPLE_ACCOUNTS = [
+  { name: "Aarav Sharma", email: "aarav@coffeecinnamon.in", role: "CUSTOMER", phone: "+91 98765 43210" },
+  { name: "Rohan Verma", email: "rohan@coffeecinnamon.in", role: "STAFF", phone: "+91 97080 12106" },
+  { name: "Priya Singh", email: "priya@coffeecinnamon.in", role: "PARTNER", partner_id: "p1" },
+  { name: "Aditya Kumar", email: "aditya@coffeecinnamon.in", role: "PARTNER", partner_id: "p2" },
 ];
 
 // Other customers, used only for today's background orders.
-export const backgroundCustomers = ["Kabir Mehta", "Sneha Iyer", "Rohan Verma", "Meera Pillai", "Arjun Nair", "Divya Shetty"];
+export const backgroundCustomers = ["Kabir Mehta", "Sneha Iyer", "Nikhil Rao", "Meera Pillai", "Arjun Nair", "Divya Shetty"];
 
 // Things the kitchen typically lists as surplus, with standard portion weights (kg).
 export const surplusItems = [

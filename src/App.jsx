@@ -14,6 +14,7 @@ import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
 import Home from "./pages/Home";
 import Impact from "./pages/Impact";
+import ForgotPassword from "./pages/ForgotPassword";
 import Login from "./pages/Login";
 import Menu from "./pages/Menu";
 import NotFound from "./pages/NotFound";
@@ -35,7 +36,8 @@ const titles = {
   "/cart": `Cart · ${BRAND}`,
   "/checkout": `Checkout · ${BRAND}`,
   "/profile": `Your account · ${BRAND}`,
-  "/login": `Log in · ${BRAND}`,
+  "/login": `Sign in · ${BRAND}`,
+  "/forgot-password": `Reset your password · ${BRAND}`,
   "/offers": `Offers · ${BRAND}`,
   "/contact": `Contact · ${BRAND}`,
 };
@@ -92,6 +94,7 @@ export default function App() {
             <Route path="/profile" element={protect(<Profile />)} />
             <Route path="/offers" element={<Offers />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </ErrorBoundary>

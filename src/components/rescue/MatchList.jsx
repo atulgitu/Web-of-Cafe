@@ -96,7 +96,7 @@ export default function MatchList({ listing, onAssigned }) {
           </ul>
         </details>
       )}
-      <p className="text-[11px] text-charcoal-soft mt-3">Prototype scoring: quantity needed 40%, collection window 25%, distance 20%, urgency 15%.</p>
+      <p className="text-[11px] text-charcoal-soft mt-3">How the score works: quantity needed 40%, collection window 25%, distance 20%, urgency 15%.</p>
     </div>
   );
 }

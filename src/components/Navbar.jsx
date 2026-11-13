@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import { ROLE_LABELS } from "../data/site";
+import { accountLinks } from "../lib/accountLinks";
 import { useAuth, useCart, useToast } from "../hooks/useAppContext";
-import DemoSwitcher from "./DemoSwitcher";
 import Logo from "./Logo";
 import { CartIcon, UserIcon } from "./icons";
 
@@ -50,6 +50,14 @@ export default function Navbar() {
   const accountRef = useRef(null);
   const moreRef = useRef(null);
   const extra = user && roleLinks[user.role];
+
+  const signOut = () => {
+    logout();
+    setAccountOpen(false);
+    setMoreOpen(false);
+    showToast("Signed out");
+    navigate("/");
+  };
 
   const [lastPath, setLastPath] = useState(pathname);
   if (lastPath !== pathname) {
@@ -99,9 +107,6 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-          <div className="hidden lg:block mr-1">
-            <DemoSwitcher />
-          </div>
 
           <Link
             to="/cart"
@@ -134,7 +139,7 @@ export default function Navbar() {
               More
             </button>
             {moreOpen && (
-              <nav id="more-menu" aria-label="More pages" className="absolute right-0 mt-2 w-60 bg-paper border border-line rounded-xl shadow-lg py-1 animate-fade-in">
+              <nav id="more-menu" aria-label="More pages" className="absolute right-0 mt-2 w-64 bg-paper border border-line rounded-lg shadow-md py-1 animate-fade-in">
                 {moreLinks.map((l) => (
                   <NavLink
                     key={l.to}
@@ -144,51 +149,71 @@ export default function Navbar() {
                     {l.label}
                   </NavLink>
                 ))}
+                {/* On phones the account menu lives here too */}
+                <div className="border-t border-line mt-1 pt-1">
+                  {user ? (
+                    <>
+                      <p className="px-4 pt-2 pb-1 text-xs text-charcoal-soft">
+                        Signed in as <span className="font-medium text-espresso">{user.name}</span>
+                      </p>
+                      {accountLinks(user.role).map((l) => (
+                        <Link key={l.to} to={l.to} className="block px-4 py-3 text-sm text-charcoal hover:bg-cream-dim">
+                          {l.label}
+                        </Link>
+                      ))}
+                      <button type="button" onClick={signOut} className="w-full text-left px-4 py-3 text-sm text-charcoal hover:bg-cream-dim">
+                        Sign out
+                      </button>
+                    </>
+                  ) : (
+                    <Link to="/login" className="block px-4 py-3 text-sm font-medium text-espresso hover:bg-cream-dim">
+                      Sign in
+                    </Link>
+                  )}
+                </div>
               </nav>
             )}
           </div>
 
-          <div className="relative hidden lg:block" ref={accountRef}>
-            <button
-              type="button"
-              onClick={() => setAccountOpen((o) => !o)}
-              aria-label="Account"
-              aria-expanded={accountOpen}
-              className="p-2.5 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
-            >
-              <UserIcon />
-            </button>
-            {accountOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-paper border border-line rounded-xl shadow-lg py-1 animate-fade-in">
-                {user ? (
-                  <>
-                    <div className="px-3 py-2 text-sm border-b border-line">
-                      <p className="font-medium text-espresso truncate">{user.name}</p>
-                      <p className="text-xs text-charcoal-soft">{ROLE_LABELS[user.role]}</p>
-                    </div>
-                    <Link to="/profile" className="block px-3 py-2 text-sm hover:bg-cream-dim">
-                      Orders &amp; contributions
+          {user ? (
+            <div className="relative hidden lg:block" ref={accountRef}>
+              <button
+                type="button"
+                onClick={() => setAccountOpen((o) => !o)}
+                aria-expanded={accountOpen}
+                aria-controls="account-menu"
+                className="flex items-center gap-2 min-h-11 pl-2.5 pr-3 rounded-full text-sm font-medium text-espresso hover:bg-cream-dim"
+              >
+                <UserIcon />
+                <span className="max-w-[9rem] truncate">{user.name.split(" ")[0]}</span>
+                <span className="sr-only">, account menu</span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" aria-hidden="true">
+                  <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+              {accountOpen && (
+                <div id="account-menu" className="absolute right-0 mt-2 w-60 bg-paper border border-line rounded-lg shadow-md py-1 animate-fade-in">
+                  <div className="px-4 py-2.5 border-b border-line">
+                    <p className="text-sm font-medium text-espresso truncate">{user.name}</p>
+                    {user.role !== "CUSTOMER" && <p className="text-xs text-charcoal-soft">{ROLE_LABELS[user.role]}</p>}
+                  </div>
+                  {accountLinks(user.role).map((l) => (
+                    <Link key={l.to} to={l.to} className="block px-4 py-2.5 text-sm text-charcoal hover:bg-cream-dim">
+                      {l.label}
                     </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        logout();
-                        showToast("Logged out");
-                        navigate("/");
-                      }}
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-cream-dim text-red-700"
-                    >
-                      Log out
-                    </button>
-                  </>
-                ) : (
-                  <Link to="/login" className="block px-3 py-2 text-sm hover:bg-cream-dim">
-                    Log in or create an account
-                  </Link>
-                )}
-              </div>
-            )}
-          </div>
+                  ))}
+                  <button type="button" onClick={signOut} className="w-full text-left px-4 py-2.5 text-sm text-charcoal hover:bg-cream-dim border-t border-line">
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Link to="/login" className="hidden lg:inline-flex items-center gap-2 min-h-11 px-3 rounded-full text-sm font-medium text-espresso hover:bg-cream-dim">
+              <UserIcon />
+              Sign in
+            </Link>
+          )}
         </div>
       </div>
     </header>

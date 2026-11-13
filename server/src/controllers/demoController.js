@@ -1,23 +1,13 @@
-// Helpers for the college demo. Both endpoints are disabled unless DEMO_MODE=true.
+// Staff-only helper, active only when DEMO_MODE=true: wipe and re-seed the sample data,
+// so a presentation starts with a fresh day (times are placed relative to now).
+// (There used to be a public endpoint here that listed the sample accounts and their
+// password for a "role switcher". It was removed: it let anyone log in as staff.)
 import { config } from "../config.js";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD, seed } from "../db/seed.js";
+import { seed } from "../db/seed.js";
 import { notFound } from "../utils/errors.js";
 
-const ensureDemo = () => {
-  if (!config.demoMode) throw notFound("Demo mode is off.");
-};
-
-// Lets the frontend's "demo role switcher" sign in as each role with a real login.
-export function accounts(_req, res) {
-  ensureDemo();
-  // When STAFF_PASSWORD is set (the live site), the staff account isn't offered here.
-  const shown = process.env.STAFF_PASSWORD ? DEMO_ACCOUNTS.filter((a) => a.role !== "STAFF") : DEMO_ACCOUNTS;
-  res.json({ password: DEMO_PASSWORD, accounts: shown.map(({ email, role, name }) => ({ email, role, name })) });
-}
-
-// Staff-only: wipe and re-seed, so the demo day starts fresh (times are relative to now).
 export async function reset(_req, res) {
-  ensureDemo();
+  if (!config.demoMode) throw notFound("Demo mode is off.");
   await seed({ log: () => {} });
   res.json({ ok: true });
 }

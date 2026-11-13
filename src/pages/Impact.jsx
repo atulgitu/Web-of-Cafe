@@ -26,9 +26,9 @@ export default function Impact() {
         such.
       </PageHeader>
 
-      <DemoNote className="mb-6 max-w-2xl">
-        Sample data. Coffee Cinnamon is a student prototype, so the partners, past pickups and contributions on this page are demo
-        records. The totals are genuinely calculated from those records, and anything you do in the demo changes them.
+      <DemoNote label="Sample data" className="mb-6 max-w-2xl">
+        The partner organisations, past pickups and contributions on this page are sample records. The totals are calculated
+        from them, and new pickups and contributions are added as they happen.
       </DemoNote>
 
       <div className="flex flex-wrap items-center gap-2 mb-6" role="group" aria-label="Time period">
@@ -134,7 +134,7 @@ export default function Impact() {
               "Meals potentially funded" assumes a partner kitchen spends about ₹{data?.estimates.assumptions.mealCostRupees ?? 45} per
               meal. We haven't verified this with each partner.
             </li>
-            <li>Partner organisations and the pre-pilot history are demo data.</li>
+            <li>Partner organisations and the pre-pilot history are sample data.</li>
           </ul>
         </section>
       </div>

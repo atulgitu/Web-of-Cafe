@@ -20,7 +20,15 @@ import { generateForecast } from "../services/forecastRunner.js";
 import { priceOrder } from "../services/pricingService.js";
 import { addDays, addMinutes, isoDate, startOfDay, startOfWeek } from "../utils/time.js";
 
-export const { DEMO_ACCOUNTS, DEMO_PASSWORD } = demo;
+export const { SAMPLE_ACCOUNTS, DEV_PASSWORD } = demo;
+
+// Which password the sample accounts get. In production it must come from the environment.
+function samplePasswords() {
+  const production = process.env.NODE_ENV === "production" || process.env.VERCEL_ENV === "production";
+  const sample = process.env.SAMPLE_ACCOUNT_PASSWORD || (production ? null : DEV_PASSWORD);
+  if (!sample) throw new Error("Set SAMPLE_ACCOUNT_PASSWORD (and STAFF_PASSWORD) before seeding a production database.");
+  return { sample, staff: process.env.STAFF_PASSWORD || sample };
+}
 
 // Small deterministic PRNG (mulberry32) so "random-looking" demo data is identical every run.
 function prng(seed) {
@@ -45,10 +53,10 @@ export async function seed({ log = console.log, now = new Date() } = {}) {
   await migrate({ log: () => {} });
   const today = startOfDay(now);
   const rand = prng(20261027);
-  const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
-  // On the live site the staff account sees real customers' names and phone numbers,
-  // so it gets its own password from STAFF_PASSWORD instead of the public demo one.
-  const staffHash = process.env.STAFF_PASSWORD ? await bcrypt.hash(process.env.STAFF_PASSWORD, 10) : passwordHash;
+  const passwords = samplePasswords();
+  const passwordHash = await bcrypt.hash(passwords.sample, 10);
+  // Staff see real customers' names and phone numbers, so they can have a separate password.
+  const staffHash = await bcrypt.hash(passwords.staff, 10);
   const menu = menuSeed.map((m) => ({ ...m, sizes: m.sizes.map(option), addons: m.addons.map(option) }));
   const menuById = new Map(menu.map((m) => [m.id, { ...m, available: true }]));
 
@@ -73,7 +81,7 @@ export async function seed({ log = console.log, now = new Date() } = {}) {
     }
 
     const users = {};
-    for (const a of demo.DEMO_ACCOUNTS) {
+    for (const a of demo.SAMPLE_ACCOUNTS) {
       users[a.role + (a.partner_id || "")] = await createUser({ ...a, passwordHash: a.role === "STAFF" ? staffHash : passwordHash, partnerId: a.partner_id }, db);
     }
     const background = [];
@@ -166,8 +174,8 @@ export async function seed({ log = console.log, now = new Date() } = {}) {
   const morningRun = addMinutes(today, 7 * 60 + 12);
   await generateForecast({ now, at: morningRun < now ? morningRun : now });
 
-  log(`Seeded demo data. Demo password for all accounts: ${DEMO_PASSWORD}`);
-  for (const a of DEMO_ACCOUNTS) log(`  ${a.role.padEnd(9)} ${a.email}`);
+  log(`Seeded sample data.${process.env.SAMPLE_ACCOUNT_PASSWORD ? "" : ` Local password for the sample accounts: ${DEV_PASSWORD}`}`);
+  for (const a of SAMPLE_ACCOUNTS) log(`  ${a.role.padEnd(9)} ${a.name.padEnd(14)} ${a.email}`);
 
   async function seedOrder(db, { user, lines, contribution, at, status }) {
     const priced = priceOrder({ lines, contribution }, menuById);

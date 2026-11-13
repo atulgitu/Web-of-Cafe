@@ -17,7 +17,7 @@ export default function BottomNav() {
     { to: "/menu", label: "Menu", Icon: CupIcon },
     { to: "/rescue", label: "Rescue", Icon: BagHeartIcon },
     fourth,
-    { to: user ? "/profile" : "/login", label: user ? "Account" : "Log in", Icon: UserIcon },
+    { to: user ? "/profile" : "/login", label: user ? "Account" : "Sign in", Icon: UserIcon },
   ];
 
   return (

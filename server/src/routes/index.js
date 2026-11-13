@@ -95,8 +95,7 @@ router.get("/impact/activity", insights.activity);
 router.get("/overview", insights.home);
 router.get("/dashboard", ...staff, insights.dashboard);
 
-// Demo helpers (only active when DEMO_MODE=true)
-router.get("/demo/accounts", demo.accounts);
+// Staff-only: reset the sample data (only when DEMO_MODE=true)
 router.post("/demo/reset", ...staff, demo.reset);
 
 export default router;

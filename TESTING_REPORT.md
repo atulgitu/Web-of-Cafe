@@ -79,6 +79,33 @@ images without `alt`, targets under 24×24px, and text contrast below WCAG AA.
 | Storage | Corrupted cart / cart line / menu cache in localStorage | FIXED: blank site or page crash → loads normally |
 | Staff dashboard | Loads; forecast warns about old sales data; contact messages listed | PASS |
 
+## 3b. Sign-in and roles
+
+Tested in Chrome against the local API after the demo role switcher was removed.
+
+| Test | Result |
+| --- | --- |
+| No "Demo", "Switch role" or seeded-account text anywhere on the home page or navbar | PASS |
+| Old `GET /api/demo/accounts` (listed every sample account with its password) | FIXED: removed, now 404 |
+| Empty sign-in → "Please enter your email address." / "Please enter your password.", focus on Email | PASS |
+| Invalid email → specific message, no request sent | PASS |
+| Wrong password and unknown email give the **same** message ("That email and password don't match.") | PASS |
+| Keyboard only: Tab to Email, type, Tab to Password, Enter signs in | FIXED: "Forgot password?" used to sit between the two fields |
+| Show/Hide password button toggles the field and `aria-pressed` | PASS |
+| Refresh while signed in keeps the session | PASS |
+| Sign out from the account menu clears the token and the navbar shows "Sign in" | PASS |
+| Customer → `/dashboard` and `/partner`: "This page is for … accounts", no data shown; staff API with a customer token → 403 | PASS |
+| Partner → `/dashboard`: refused; partner sign-in lands on `/partner` | PASS |
+| Staff sign-in lands on `/dashboard` with the order list | PASS |
+| Signed out → `/dashboard` → Sign in → returns to `/dashboard` | PASS |
+| Signed out → `/profile` redirects to sign in | PASS |
+| Account menus only list pages that exist for that role (customer: My orders, Account details; staff: Orders & kitchen, Rescue board; partner: My pickups, Available food) | PASS |
+| Register: mismatched confirm password, password under 8 characters | PASS |
+| Register succeeds and the new account is a CUSTOMER, even when `role: "STAFF"` is sent to the API directly | PASS |
+| "Forgot password?" opens a page that carries over the email and prepares a WhatsApp/email message to the café | PASS |
+| `/login` at 320, 375, 390, 768, 1024, 1440px: no overflow, labels on every input, one h1, one main | PASS |
+| API test: customers and partners get 403 on staff endpoints (`/dashboard`, `/orders/today`, `/contact`, `/demo/reset`) | PASS (27/27 API checks) |
+
 ## 4. Keyboard
 
 | Test | Result |

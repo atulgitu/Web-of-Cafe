@@ -24,7 +24,7 @@ const columns = [
     links: [
       { to: "/about", label: "About the café" },
       { to: "/about#forecast", label: "How the forecast works" },
-      { to: "/about#status", label: "What's real, what's a prototype" },
+      { to: "/about#status", label: "What's real and what's sample data" },
     ],
   },
 ];
@@ -68,7 +68,7 @@ export default function Footer() {
       <div className="border-t border-line">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5 text-xs text-charcoal-soft flex flex-col sm:flex-row sm:justify-between gap-2">
           <p>Built as a student project exploring how technology can help cafés reduce food waste.</p>
-          <p>Partners and figures shown are demo data · © 2026 Coffee Cinnamon</p>
+          <p>Partner organisations and impact figures are sample data · © 2026 Coffee Cinnamon</p>
         </div>
       </div>
     </footer>

@@ -21,16 +21,15 @@ const status = [
   },
   {
     id: "prototype",
-    heading: "Prototype or simulated",
+    heading: "Simplified or sample data",
     tone: "text-caramel-dark",
     items: [
-      "Payment is a demo step — nothing is charged",
+      "There is no online payment: orders are paid at the counter on pickup",
       "Forecasting is a transparent statistical baseline, not a trained machine-learning model",
       "Matching weights are set by hand, not learned from outcomes",
       "Partner distances are typed in, not measured by a mapping service",
-      "Partner organisations, sales history and past pickups are demo data",
+      "Partner organisations, sales history and past pickups are sample data",
       "CO₂e and meals-funded figures are rough estimates",
-      "The demo role switcher signs in as seeded test accounts",
     ],
   },
   {
@@ -74,7 +73,7 @@ export default function About() {
         <p className="text-charcoal-soft leading-relaxed lg:pb-2">
           Coffee Cinnamon is a café invented for a college project. The website is real and working: you can order from the menu,
           and the kitchen can forecast tomorrow's cooking and pass unsold food to community partners. This page describes the café,
-          then explains how each part works and what is still a prototype.
+          then explains how each part works and what is still simplified.
         </p>
       </section>
 
@@ -151,7 +150,7 @@ export default function About() {
           </section>
 
           <section id="forecast" className="scroll-mt-24">
-            <h2 className="font-serif-display text-2xl text-espresso mb-3">Demand forecasting (prototype)</h2>
+            <h2 className="font-serif-display text-2xl text-espresso mb-3">Demand forecasting</h2>
             <p>
               For each category, the server takes the last four values for the same weekday — say, the last four Wednesdays —
               and weights recent weeks more: 10%, 20%, 30%, 40%. It multiplies that by the trend over the last seven days
@@ -204,12 +203,12 @@ export default function About() {
               <li>The forecast works by category, not by individual dish, and it can't anticipate one-off events.</li>
               <li>Matching uses fixed collection windows and approximate distances.</li>
               <li>The CO₂e figure uses a single average factor and is only an order of magnitude.</li>
-              <li>Food safety (holding temperatures, allergen labelling, liability) needs agreements this prototype doesn't model.</li>
+              <li>Food safety (holding temperatures, allergen labelling, liability) needs agreements this project doesn't cover yet.</li>
             </ul>
           </section>
 
           <section id="status" className="scroll-mt-24">
-            <h2 className="font-serif-display text-2xl text-espresso mb-6">What's real, what's a prototype, what's next</h2>
+            <h2 className="font-serif-display text-2xl text-espresso mb-6">What's real, what's simplified, what's next</h2>
             <div className="space-y-8">
               {status.map((s) => (
                 <div key={s.id}>

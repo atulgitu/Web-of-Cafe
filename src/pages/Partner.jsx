@@ -204,7 +204,7 @@ function PartnerDashboard() {
             )}
           </section>
 
-          <DemoNote>This partner is a fictional demo organisation. SMS alerts for new listings aren't built yet.</DemoNote>
+          <DemoNote>Partner organisations on this site are sample data. Text alerts for new listings aren't built yet; check this page after the lunch and evening rush.</DemoNote>
         </aside>
       </div>
     </div>

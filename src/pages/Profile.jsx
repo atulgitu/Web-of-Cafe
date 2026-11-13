@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { DemoSwitcherInline } from "../components/DemoSwitcher";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { EmptyState, ErrorState, Skeleton, Spinner, Stat } from "../components/ui";
 import { ROLE_LABELS } from "../data/site";
 import useApi from "../hooks/useApi";
@@ -11,13 +10,20 @@ import { formatDate, formatRupees } from "../lib/format";
 import { statusLabel } from "../lib/orders";
 import { btn, container, field } from "../lib/styles";
 
-const tabs = ["Orders", "Your contribution", "Details"];
+// The tab is kept in the URL (?tab=details) so account-menu links can open it directly.
+const tabs = [
+  { id: "orders", label: "Orders" },
+  { id: "contribution", label: "Your contribution" },
+  { id: "details", label: "Details" },
+];
 
 export default function Profile() {
   const { user, logout } = useAuth();
   const { showToast } = useToast();
   const navigate = useNavigate();
-  const [tab, setTab] = useState(tabs[0]);
+  const [params, setParams] = useSearchParams();
+  const tab = tabs.some((t) => t.id === params.get("tab")) ? params.get("tab") : "orders";
+  const setTab = (id) => setParams({ tab: id }, { replace: true });
 
   return (
     <div className={`${container} py-8 sm:py-10`}>
@@ -37,37 +43,34 @@ export default function Profile() {
         <nav className="flex md:flex-col gap-1 overflow-x-auto scroll-thin -mx-4 px-4 md:mx-0 md:px-0" aria-label="Account sections">
           {tabs.map((t) => (
             <button
-              key={t}
+              key={t.id}
               type="button"
-              aria-pressed={tab === t}
-              onClick={() => setTab(t)}
+              aria-pressed={tab === t.id}
+              onClick={() => setTab(t.id)}
               className={`text-left min-h-10 px-3 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
-                tab === t ? "bg-cream-dim text-espresso" : "text-charcoal-soft hover:bg-cream-dim/70"
+                tab === t.id ? "bg-cream-dim text-espresso" : "text-charcoal-soft hover:bg-cream-dim/70"
               }`}
             >
-              {t}
+              {t.label}
             </button>
           ))}
           <button
             type="button"
             onClick={() => {
               logout();
-              showToast("Logged out");
+              showToast("Signed out");
               navigate("/");
             }}
             className="text-left min-h-10 px-3 rounded-lg text-sm font-medium text-red-700 hover:bg-red-50 md:mt-4 whitespace-nowrap"
           >
-            Log out
+            Sign out
           </button>
         </nav>
 
-        <section aria-label={tab} className="min-w-0 space-y-10">
-          {tab === "Orders" && <Orders />}
-          {tab === "Your contribution" && <Contributions />}
-          {tab === "Details" && <Details />}
-          <div className="lg:hidden">
-            <DemoSwitcherInline />
-          </div>
+        <section aria-label={tabs.find((t) => t.id === tab).label} className="min-w-0 space-y-10">
+          {tab === "orders" && <Orders />}
+          {tab === "contribution" && <Contributions />}
+          {tab === "details" && <Details />}
         </section>
       </div>
     </div>
@@ -159,7 +162,7 @@ function Contributions() {
 
       <form onSubmit={contribute} className="border border-line rounded-xl bg-paper p-5">
         <h2 className="font-medium text-espresso">Contribute without ordering</h2>
-        <p className="text-sm text-charcoal-soft mt-1">Demo payment — nothing is charged, but it's recorded and counted on the impact page.</p>
+        <p className="text-sm text-charcoal-soft mt-1">Recorded now and paid at the counter on your next visit. It's counted on the impact page.</p>
         <div className="mt-4 flex gap-2 items-end">
           <div className="w-32">
             <label htmlFor="standalone-amount" className={field.label}>

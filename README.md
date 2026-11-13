@@ -49,18 +49,27 @@ To stop the database: `npm run db:local -- stop` (inside `server/`).
 Run `npm run seed` again on the day of a demo so the rescue board has current listings. (The site still works on
 old data; it simply shows an empty board, and the forecast says which date its sales data ends on.)
 
-## Demo accounts
+## Accounts and roles
 
-Seeded by `npm run seed`. The password for all of them is `cinnamon123`.
+Sign in at `/login` with an email and password. There is no role picker: each account's role is stored in the
+database, and public sign-up always creates a **customer**. Staff and community-partner accounts can only be created
+by the seed script (or directly in the database).
 
-| Role | Email |
-| --- | --- |
-| Customer | customer@coffeecinnamon.in |
-| Café staff | staff@coffeecinnamon.in |
-| Community partner | partner@coffeecinnamon.in |
-| Community partner (vegetarian kitchen) | hope@coffeecinnamon.in |
+Sample accounts created by `npm run seed`, one per role, for development and testing:
 
-On a wide screen the **Demo** switcher in the top bar signs in as each role. On a phone it is on the Log in page.
+| Role | Name | Email |
+| --- | --- | --- |
+| Customer | Aarav Sharma | aarav@coffeecinnamon.in |
+| Café staff | Rohan Verma | rohan@coffeecinnamon.in |
+| Community partner | Priya Singh | priya@coffeecinnamon.in |
+| Community partner (vegetarian kitchen) | Aditya Kumar | aditya@coffeecinnamon.in |
+
+Locally they all use the password `cinnamon123`. A production database is seeded with `SAMPLE_ACCOUNT_PASSWORD`
+and `STAFF_PASSWORD` from the hosting environment instead, and the seed refuses to run in production without them,
+so the live accounts never use a password that is in Git.
+
+After signing in, staff go to the kitchen dashboard (`/dashboard`), partners to their pickups (`/partner`), and
+customers back to where they were.
 
 Coupon codes: `STUDENT10` (any day) and `CINNAMON20` (Saturdays and Sundays only).
 

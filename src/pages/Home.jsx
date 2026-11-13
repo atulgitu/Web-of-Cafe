@@ -246,12 +246,12 @@ export default function Home() {
         </div>
 
         <div aria-labelledby="forecast-heading">
-          <Eyebrow>Demand forecasting prototype</Eyebrow>
+          <Eyebrow>Planning the kitchen</Eyebrow>
           <h2 id="forecast-heading" className="font-serif-display text-2xl text-espresso mt-3">
             Preparing tomorrow without guessing.
           </h2>
           <p className="text-sm text-charcoal-soft mt-2 leading-relaxed">
-            The prototype looks at the last four {data?.forecast?.weekday || "same weekday"}s, recent sales trends and how much the kitchen
+            Each morning we look at the last four {data?.forecast?.weekday || "same weekday"}s, recent sales trends and how much the kitchen
             used to prepare, then recommends quantities with a small safety buffer.
           </p>
           {data && !data.forecast && (
@@ -322,7 +322,7 @@ export default function Home() {
                 </div>
               </dl>
               <p className="text-sm text-charcoal-soft mt-5 leading-relaxed">{data.nextPartner.note}</p>
-              <p className="text-xs text-charcoal-soft/80 mt-3">Partner organisations in this prototype are fictional.</p>
+              <p className="text-xs text-charcoal-soft mt-3">Partner organisations on this site are sample data.</p>
             </div>
           </div>
         </section>
@@ -356,8 +356,7 @@ export default function Home() {
               </dl>
               <p className="mt-8 text-xs text-cream/80 max-w-2xl leading-relaxed">
                 <span className="mr-2 rounded border border-cream/40 px-1.5 py-px text-[10px] font-semibold uppercase tracking-wide">Sample data</span>
-                Coffee Cinnamon is a student prototype. These totals are added up from the demo pickups and orders in its database, not
-                from a real café's records.
+                These totals are calculated from the sample pickups and orders in our database, not from a real café's history.
               </p>
             </>
           ) : (

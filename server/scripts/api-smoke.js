@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { createApp } from "../src/app.js";
 import { pool } from "../src/db/pool.js";
-import { DEMO_PASSWORD, seed } from "../src/db/seed.js";
+import { DEV_PASSWORD, seed } from "../src/db/seed.js";
 
 await seed({ log: () => {} });
 const server = createApp().listen(0);
@@ -29,13 +29,13 @@ async function check(name, fn) {
     process.exitCode = 1;
   }
 }
-const login = async (email) => (await call("POST", "/auth/login", { body: { email, password: DEMO_PASSWORD } })).body.token;
+const login = async (email) => (await call("POST", "/auth/login", { body: { email, password: process.env.SAMPLE_ACCOUNT_PASSWORD || DEV_PASSWORD } })).body.token;
 
 try {
-  const customer = await login("customer@coffeecinnamon.in");
-  const staff = await login("staff@coffeecinnamon.in");
-  const partner = await login("partner@coffeecinnamon.in");
-  const hope = await login("hope@coffeecinnamon.in");
+  const customer = await login("aarav@coffeecinnamon.in");
+  const staff = await login("rohan@coffeecinnamon.in");
+  const partner = await login("priya@coffeecinnamon.in");
+  const hope = await login("aditya@coffeecinnamon.in");
 
   await check("register always creates a CUSTOMER, even if a role is sent", async () => {
     const r = await call("POST", "/auth/register", { body: { name: "Test", email: "new@example.com", password: "longpassword", role: "STAFF" } });
@@ -46,6 +46,25 @@ try {
   await check("duplicate email and wrong password are rejected", async () => {
     assert.equal((await call("POST", "/auth/register", { body: { name: "T", email: "new@example.com", password: "longpassword" } })).status, 409);
     assert.equal((await call("POST", "/auth/login", { body: { email: "new@example.com", password: "nope" } })).status, 401);
+  });
+  await check("the old public demo-accounts endpoint is gone", async () => {
+    assert.equal((await call("GET", "/demo/accounts")).status, 404);
+  });
+  await check("login errors don't reveal whether the email exists", async () => {
+    const unknown = await call("POST", "/auth/login", { body: { email: "nobody@example.com", password: "whatever1" } });
+    const wrong = await call("POST", "/auth/login", { body: { email: "aarav@coffeecinnamon.in", password: "whatever1" } });
+    assert.equal(unknown.status, 401);
+    assert.equal(wrong.status, 401);
+    assert.equal(unknown.body.error, wrong.body.error);
+  });
+  await check("partners and customers can't use staff endpoints; customers can't use partner ones", async () => {
+    for (const token of [customer, partner]) {
+      assert.equal((await call("GET", "/dashboard", { token })).status, 403);
+      assert.equal((await call("GET", "/orders/today", { token })).status, 403);
+      assert.equal((await call("GET", "/contact", { token })).status, 403);
+      assert.equal((await call("POST", "/demo/reset", { token })).status, 403);
+    }
+    assert.equal((await call("GET", "/partners/me", { token: customer })).status, 403);
   });
   await check("/auth/me needs a valid token", async () => {
     assert.equal((await call("GET", "/auth/me")).status, 401);
@@ -78,7 +97,7 @@ try {
   await check("placing an order saves it, with the contribution", async () => {
     const r = await call("POST", "/orders", {
       token: customer,
-      body: { lines: [{ menuItemId: "m1", quantity: 1 }], contribution: 50, customer: { name: "Ananya", phone: "9876543210" } },
+      body: { lines: [{ menuItemId: "m1", quantity: 1 }], contribution: 50, customer: { name: "Aarav", phone: "9876543210" } },
     });
     assert.equal(r.status, 201, JSON.stringify(r.body));
     order = r.body.order;
@@ -202,7 +221,7 @@ try {
     const tooMany = await call("POST", "/orders/quote", { body: { lines: [{ menuItemId: "d5", quantity: croissant.batch.left + 1 }] } });
     assert.equal(tooMany.status, 400);
     assert.match(tooMany.body.error, /Only 3/);
-    const body = { lines: [{ menuItemId: "d5", quantity: croissant.batch.left }], customer: { name: "Ananya", phone: "9876543210" } };
+    const body = { lines: [{ menuItemId: "d5", quantity: croissant.batch.left }], customer: { name: "Aarav", phone: "9876543210" } };
     assert.equal((await call("POST", "/orders", { token: customer, body })).status, 201);
     assert.equal((await call("GET", "/menu/d5")).body.item.batch.left, 0);
     const again = await call("POST", "/orders", { token: customer, body: { ...body, lines: [{ menuItemId: "d5", quantity: 1 }] } });
