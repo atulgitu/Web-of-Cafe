@@ -1,0 +1,30 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci && npm ci --prefix server --omit=dev",
+  "buildCommand": "npm run build && npm --prefix server run setup-db",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/[...path].js": { "maxDuration": 30 }
+  },
+  "rewrites": [
+    { "source": "/((?!api/|assets/|icons/|sw\\.js|manifest\\.webmanifest|icon\\.svg|placeholder-food\\.svg).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache" },
+        { "key": "Service-Worker-Allowed", "value": "/" }
+      ]
+    },
+    {
+      "source": "/manifest.webmanifest",
+      "headers": [{ "key": "Content-Type", "value": "application/manifest+json" }]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+    }
+  ]
+}

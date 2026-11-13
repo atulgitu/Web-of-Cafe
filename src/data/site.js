@@ -1,40 +1,34 @@
-// Shared constants for the Brew & Care prototype.
+// Static facts about the café and display labels. Live data comes from the API.
 
 export const CAFE = {
-  name: "Brew & Care",
+  name: "Coffee Cinnamon",
   tagline: "Good food shouldn't go to waste.",
+  area: "Indiranagar",
   address: "142, 5th Cross, Indiranagar, Bengaluru 560038",
-  pickupPoint: "Back counter, Brew & Care Indiranagar (side entrance on 5th Cross)",
-  phone: "+91 80 4567 1234",
-  email: "hello@brewandcare.in",
-  hours: [
+  pickupPoint: "Back counter, side entrance on 5th Cross",
+  // Real contact details: orders arrive on this WhatsApp number.
+  phone: "+91 97080 12106",
+  whatsappNumber: "919708012106", // country code + number, digits only (wa.me format)
+  email: "atulraushanbn@gmail.com",
+  // Opening hours by weekday (0 = Sunday), in minutes after midnight.
+  hours: { weekday: { open: 7 * 60 + 30, close: 22 * 60 + 30 }, weekend: { open: 8 * 60, close: 23 * 60 } },
+  hoursText: [
     { days: "Mon – Fri", time: "7:30 AM – 10:30 PM" },
     { days: "Sat – Sun", time: "8:00 AM – 11:00 PM" },
   ],
-  pilotStarted: "3 August 2026",
+  pickupMinutes: 15,
+  pilotStarted: "August 2026",
 };
 
-// The prototype runs on a fixed "demo day" so every number on every page agrees
-// with every other number. Rescue actions advance this clock a few minutes each.
-export const DEMO_DAY = {
-  label: "Tuesday, 27 October",
-  short: "Tue 27 Oct",
-  tomorrow: "Wednesday",
-  tomorrowShort: "Wed 28 Oct",
-  startMinutes: 18 * 60 + 50, // 6:50 PM
+export const MENU_CATEGORIES = ["Coffee", "Cold Drinks", "Tea", "Breakfast", "Meals", "Snacks", "Bakery", "Combos"];
+
+export const TAGS = {
+  popular: { label: "Popular", tone: "caramel" },
+  "high-protein": { label: "High protein", tone: "neutral" },
+  "low-waste": { label: "Low-waste pick", tone: "leaf" },
 };
 
-// Assumptions used in estimates. Shown on the Impact and About pages.
-export const ASSUMPTIONS = {
-  mealCost: 45, // ₹ a partner kitchen spends to serve one meal
-  co2PerKg: 2.5, // kg CO2e avoided per kg of food not wasted (commonly cited rough average)
-};
+export const ROLE_LABELS = { CUSTOMER: "Customer", STAFF: "Café staff", PARTNER: "Community partner" };
 
-export const ROLES = [
-  { id: "customer", label: "Customer", hint: "Order food, add a contribution" },
-  { id: "staff", label: "Café staff", hint: "Forecasts, surplus listings, matching" },
-  { id: "partner", label: "Community partner", hint: "Reserve and collect surplus food" },
-];
-
-// Which partner the "Community partner" demo role acts as.
-export const DEMO_PARTNER_ID = "p1";
+// Mirrors the server's estimate constants, for showing hints before a request returns.
+export const MEAL_COST_ESTIMATE = 45;

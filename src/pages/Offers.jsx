@@ -12,7 +12,7 @@ const offers = [
   },
   {
     title: "Weekend treat",
-    code: "BREW20",
+    code: "CINNAMON20",
     text: "20% off the whole bill on Saturdays and Sundays.",
     when: "Sat – Sun",
     applies: true,

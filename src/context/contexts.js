@@ -5,5 +5,3 @@ import { createContext } from "react";
 export const AuthContext = createContext(null);
 export const CartContext = createContext(null);
 export const ToastContext = createContext(null);
-export const RoleContext = createContext(null);
-export const RescueContext = createContext(null);

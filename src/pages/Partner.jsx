@@ -1,100 +1,149 @@
 import { useState } from "react";
 import ListingCard from "../components/rescue/ListingCard";
 import RoleGate from "../components/RoleGate";
-import { DemoNote, EmptyState, PageHeader, Stat } from "../components/ui";
-import { getPartner } from "../data/partners";
-import { pickupLog } from "../data/rescue";
-import { CAFE, DEMO_DAY, DEMO_PARTNER_ID } from "../data/site";
-import { useRescue, useToast } from "../hooks/useAppContext";
-import { formatTime, formatWindow } from "../lib/format";
-import { partnerLoad } from "../lib/matching";
+import { DemoNote, EmptyState, ErrorState, Skeleton, Spinner, Stat } from "../components/ui";
+import { CAFE } from "../data/site";
+import useApi from "../hooks/useApi";
+import { useToast } from "../hooks/useAppContext";
+import useOnline from "../hooks/useOnline";
+import { api } from "../lib/api";
+import { formatDate, formatTime } from "../lib/format";
 import { btn, container } from "../lib/styles";
+
+const clock = (minutes) => formatTime(new Date(new Date().setHours(0, minutes, 0, 0)));
 
 export default function Partner() {
   return (
-    <RoleGate role="partner" why="It's where a community kitchen or shelter reserves surplus food and confirms pickups.">
+    <RoleGate role="PARTNER" why="It's where a community kitchen or shelter reserves surplus food and confirms pickups.">
       <PartnerDashboard />
     </RoleGate>
   );
 }
 
+// Designed for a volunteer on a phone: what's available → reserve → pickup details → mark collected.
 function PartnerDashboard() {
-  const { listings, clock, reserveListing, cancelReservation, markCollected } = useRescue();
+  const me = useApi("/partners/me");
+  const board = useApi("/rescue");
   const { showToast } = useToast();
-  const me = getPartner(DEMO_PARTNER_ID);
+  const online = useOnline();
   const [confirming, setConfirming] = useState(null);
+  const [busy, setBusy] = useState(null);
 
-  const available = listings.filter((l) => l.status === "available").sort((a, b) => a.pickupStart - b.pickupStart);
-  const mine = listings.filter((l) => l.partnerId === me.id);
-  const upcoming = mine.filter((l) => l.status === "reserved").sort((a, b) => a.pickupStart - b.pickupStart);
-  const collectedToday = mine.filter((l) => l.status === "collected");
-
-  const load = partnerLoad(me.id, listings);
-  const stillNeeded = Math.max(0, me.needsToday - load);
-
-  const history = [
-    ...collectedToday.map((l) => ({ id: l.id, date: `Today, ${DEMO_DAY.short.split(" ").slice(1).join(" ")}`, item: l.item, portions: l.portions })),
-    ...pickupLog.filter((p) => p.partnerId === me.id),
-  ];
-  const historyTotal = history.reduce((s, h) => s + h.portions, 0);
-
-  const reserve = (l) => {
-    reserveListing(l.id, me.id);
-    showToast(`Reserved ${l.portions} — collect from ${formatTime(Math.max(l.pickupStart, me.window.start))}`);
+  const refresh = () => {
+    me.reload();
+    board.reload();
   };
 
-  return (
-    <div className={`${container} py-10`}>
-      <PageHeader eyebrow={`Community partner · ${me.type}`} title={me.name}>
-        {me.area} · {me.distanceKm} km from the café · you usually collect {formatWindow(me.window.start, me.window.end)}
-      </PageHeader>
+  const act = async (id, path, success) => {
+    setBusy(id);
+    try {
+      await api(`/rescue/${id}/${path}`, { method: "POST" });
+      showToast(success);
+      setConfirming(null);
+      refresh();
+    } catch (err) {
+      showToast(err.message || "We couldn't update this pickup. Please try again.", "error");
+    } finally {
+      setBusy(null);
+    }
+  };
 
-      <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-5 border-y border-line py-5 mb-12">
-        <Stat label="Meals you planned for tonight" value={me.needsToday} />
-        <Stat label="Reserved or collected" value={load} />
-        <Stat label="Still looking for" value={stillNeeded} tone="leaf" />
-        <Stat label="Received in the last 9 days" value={historyTotal} />
+  if (me.error && !me.data) {
+    return (
+      <div className={`${container} py-10`}>
+        <ErrorState title="We couldn't load your pickups." error={me.error} onRetry={refresh} />
+      </div>
+    );
+  }
+  if (!me.data || !board.data) {
+    return (
+      <div className={`${container} py-10 space-y-4`} aria-busy="true">
+        <Skeleton className="h-10 w-2/3" />
+        <Skeleton className="h-60 w-full rounded-xl" />
+      </div>
+    );
+  }
+
+  const { partner, today, history } = me.data;
+  const available = board.data.listings.filter((l) => l.status === "available");
+  const mine = board.data.listings.filter((l) => l.partnerId === partner.id && l.status === "reserved");
+
+  return (
+    <div className={`${container} py-8 sm:py-10`}>
+      <p className="text-xs font-semibold tracking-[0.14em] uppercase text-caramel-dark">{partner.type}</p>
+      <h1 className="font-serif-display text-3xl sm:text-4xl text-espresso mt-2">{partner.name}</h1>
+      <p className="text-charcoal-soft mt-1">
+        {partner.area} · ~{partner.distanceKm} km from the café · you usually collect {clock(partner.windowStart)}–{clock(partner.windowEnd)}
+        {partner.vegOnly && " · vegetarian only"}
+      </p>
+
+      <dl className="grid grid-cols-3 gap-x-6 gap-y-5 border-y border-line py-5 my-8">
+        <Stat label="Planned for today" value={partner.needsPerDay} />
+        <Stat label="Reserved or collected" value={today.loadToday} />
+        <Stat label="Still looking for" value={today.stillNeeded} tone="leaf" />
       </dl>
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-12">
-        <div className="space-y-14 min-w-0">
+        <div className="space-y-12 min-w-0">
+          {mine.length > 0 && (
+            <section aria-labelledby="mine-heading">
+              <h2 id="mine-heading" className="font-serif-display text-2xl text-espresso mb-4">
+                Your pickups
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {mine.map((l) => (
+                  <ListingCard key={l.id} listing={l}>
+                    <button
+                      type="button"
+                      disabled={busy === l.id || !online}
+                      onClick={() => act(l.id, "complete", "Marked as collected — saved from going to waste")}
+                      className={`${btn.primary} flex-1 sm:flex-none`}
+                    >
+                      {busy === l.id && <Spinner />} Mark collected
+                    </button>
+                    <button type="button" disabled={busy === l.id || !online} onClick={() => act(l.id, "release", "Released — it's back on the board")} className={btn.small}>
+                      Can't make it
+                    </button>
+                  </ListingCard>
+                ))}
+              </div>
+            </section>
+          )}
+
           <section aria-labelledby="avail-heading">
-            <h2 id="avail-heading" className="font-serif-display text-2xl text-espresso mb-1">
-              Available now
-            </h2>
-            <p className="text-sm text-charcoal-soft mb-5">From {CAFE.name}, Indiranagar. Reserve only what you can collect in the window.</p>
+            <div className="flex items-baseline justify-between gap-3 mb-4">
+              <h2 id="avail-heading" className="font-serif-display text-2xl text-espresso">
+                Available now
+              </h2>
+              <button type="button" onClick={refresh} className="text-sm text-charcoal-soft hover:text-espresso min-h-10 px-2">
+                Refresh
+              </button>
+            </div>
             {available.length === 0 ? (
               <EmptyState title="Nothing available right now.">
-                New listings usually appear after 3 PM and again after 7 PM. We'll show them here as soon as they're posted.
+                New food is usually listed after the lunch rush and again in the evening. Refresh to check.
               </EmptyState>
             ) : (
               <div className="grid md:grid-cols-2 gap-4">
                 {available.map((l) => {
-                  const unsuitable = !l.veg && me.vegOnly;
+                  const unsuitable = !l.veg && partner.vegOnly;
                   return (
-                    <ListingCard key={l.id} listing={l} now={clock}>
+                    <ListingCard key={l.id} listing={l}>
                       {confirming === l.id ? (
                         <>
                           <span className="text-sm text-charcoal w-full">
-                            Reserve all {l.portions} and collect by {formatTime(Math.min(l.pickupEnd, l.bestBefore))}?
+                            Reserve all {l.portions} and collect by {formatTime(l.pickupEnd)}?
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              reserve(l);
-                              setConfirming(null);
-                            }}
-                            className={btn.leaf}
-                          >
-                            Yes, reserve
+                          <button type="button" disabled={busy === l.id || !online} onClick={() => act(l.id, "reserve", `Reserved — collect from ${formatTime(l.pickupStart)}`)} className={btn.leaf}>
+                            {busy === l.id && <Spinner />} Yes, reserve
                           </button>
                           <button type="button" onClick={() => setConfirming(null)} className={btn.small}>
                             Cancel
                           </button>
                         </>
                       ) : (
-                        <button type="button" disabled={unsuitable} onClick={() => setConfirming(l.id)} className={btn.leaf}>
-                          {unsuitable ? "Not vegetarian" : "Reserve"}
+                        <button type="button" disabled={unsuitable || !online} onClick={() => setConfirming(l.id)} className={`${btn.leaf} w-full sm:w-auto`}>
+                          {unsuitable ? "Not vegetarian" : `Reserve ${l.portions}`}
                         </button>
                       )}
                     </ListingCard>
@@ -103,65 +152,33 @@ function PartnerDashboard() {
               </div>
             )}
           </section>
-
-          <section aria-labelledby="mine-heading">
-            <h2 id="mine-heading" className="font-serif-display text-2xl text-espresso mb-5">
-              Your pickups today
-            </h2>
-            {upcoming.length === 0 && collectedToday.length === 0 ? (
-              <p className="text-sm text-charcoal-soft">Nothing reserved yet.</p>
-            ) : (
-              <div className="grid md:grid-cols-2 gap-4">
-                {[...upcoming, ...collectedToday].map((l) => (
-                  <ListingCard key={l.id} listing={l} now={clock}>
-                    {l.status === "reserved" ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            markCollected(l.id);
-                            showToast("Marked as collected — thank you");
-                          }}
-                          className={btn.primary}
-                        >
-                          Mark collected
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            cancelReservation(l.id);
-                            showToast("Released — it's back on the board");
-                          }}
-                          className={btn.small}
-                        >
-                          Can't make it
-                        </button>
-                      </>
-                    ) : (
-                      <span className="text-sm text-leaf">Collected — saved from going to waste.</span>
-                    )}
-                  </ListingCard>
-                ))}
-              </div>
-            )}
-          </section>
         </div>
 
         <aside className="space-y-10">
-          <section className="border border-line rounded-xl bg-paper p-5">
-            <h2 className="font-medium text-espresso">Pickup details</h2>
+          <section className="border border-line rounded-xl bg-paper p-5" aria-labelledby="details-heading">
+            <h2 id="details-heading" className="font-medium text-espresso">
+              Pickup details
+            </h2>
             <dl className="mt-3 space-y-3 text-sm">
               <div>
                 <dt className="text-xs text-charcoal-soft">Where</dt>
-                <dd className="text-charcoal">{CAFE.pickupPoint}</dd>
+                <dd className="text-charcoal">
+                  {CAFE.address}
+                  <br />
+                  {CAFE.pickupPoint}
+                </dd>
               </div>
               <div>
                 <dt className="text-xs text-charcoal-soft">Ask for</dt>
-                <dd className="text-charcoal">Whoever's on the evening shift — food is bagged and labelled with your name.</dd>
+                <dd className="text-charcoal">Whoever's on shift — food is bagged and labelled with your organisation's name.</dd>
               </div>
               <div>
                 <dt className="text-xs text-charcoal-soft">Café phone</dt>
-                <dd className="text-charcoal">{CAFE.phone}</dd>
+                <dd>
+                  <a href={`tel:${CAFE.phone.replace(/\s/g, "")}`} className="text-caramel-dark underline underline-offset-2">
+                    {CAFE.phone}
+                  </a>
+                </dd>
               </div>
             </dl>
           </section>
@@ -170,20 +187,24 @@ function PartnerDashboard() {
             <h2 id="history-heading" className="font-medium text-espresso mb-3">
               Previous pickups
             </h2>
-            <ul className="divide-y divide-line border-y border-line">
-              {history.map((h) => (
-                <li key={h.id} className="flex justify-between gap-3 py-2.5 text-sm">
-                  <span className="min-w-0">
-                    <span className="block text-charcoal truncate">{h.item}</span>
-                    <span className="block text-xs text-charcoal-soft">{h.date}</span>
-                  </span>
-                  <span className="text-charcoal-soft nums shrink-0">{h.portions}</span>
-                </li>
-              ))}
-            </ul>
+            {history.length === 0 ? (
+              <p className="text-sm text-charcoal-soft">Completed pickups will show up here.</p>
+            ) : (
+              <ul className="divide-y divide-line border-y border-line">
+                {history.slice(0, 12).map((h) => (
+                  <li key={h.id} className="flex justify-between gap-3 py-2.5 text-sm">
+                    <span className="min-w-0">
+                      <span className="block text-charcoal truncate">{h.item}</span>
+                      <span className="block text-xs text-charcoal-soft">{formatDate(h.completedAt)}</span>
+                    </span>
+                    <span className="text-charcoal-soft nums shrink-0">{h.portions}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
-          <DemoNote>You're signed in as a demo partner. Partner accounts, notifications and SMS reminders aren't built yet.</DemoNote>
+          <DemoNote>This partner is a fictional demo organisation. SMS alerts for new listings aren't built yet.</DemoNote>
         </aside>
       </div>
     </div>

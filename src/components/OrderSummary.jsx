@@ -1,16 +1,24 @@
-import { useCart } from "../hooks/useAppContext";
 import { formatRupees } from "../lib/format";
-import { SummaryRow } from "./ui";
+import { Skeleton, SummaryRow } from "./ui";
 
-export default function OrderSummary() {
-  const { subtotal, discount, coupon, tax, donation, total } = useCart();
+// Totals as calculated by the server (POST /api/orders/quote).
+export default function OrderSummary({ quote, loading }) {
+  if (!quote) {
+    return (
+      <div className="space-y-2.5" aria-busy="true" aria-label="Calculating totals">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-6 w-full mt-3" />
+      </div>
+    );
+  }
   return (
-    <dl className="space-y-2 text-sm">
-      <SummaryRow label="Subtotal" value={formatRupees(subtotal)} />
-      {discount > 0 && <SummaryRow label={`Discount (${coupon.code})`} value={`−${formatRupees(discount)}`} tone="leaf" />}
-      <SummaryRow label="Taxes (5%)" value={formatRupees(tax)} />
-      {donation > 0 && <SummaryRow label="Community meal contribution" value={formatRupees(donation)} tone="leaf" />}
-      <SummaryRow label="Total" value={formatRupees(total)} strong />
+    <dl className={`space-y-2 text-sm transition-opacity ${loading ? "opacity-60" : ""}`}>
+      <SummaryRow label="Subtotal" value={formatRupees(quote.subtotal)} />
+      {quote.discount > 0 && <SummaryRow label={`Discount (${quote.coupon.code})`} value={`−${formatRupees(quote.discount)}`} tone="leaf" />}
+      <SummaryRow label="Taxes (5%)" value={formatRupees(quote.tax)} />
+      {quote.contribution > 0 && <SummaryRow label="Community meal contribution" value={formatRupees(quote.contribution)} tone="leaf" />}
+      <SummaryRow label="Total" value={formatRupees(quote.total)} strong />
     </dl>
   );
 }

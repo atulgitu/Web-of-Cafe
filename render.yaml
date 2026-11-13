@@ -1,0 +1,34 @@
+# Render Blueprint for the Coffee Cinnamon API + PostgreSQL.
+# In Render: New → Blueprint → pick this repo. You'll be asked for CORS_ORIGIN
+# (your Vercel URL). JWT_SECRET is generated automatically.
+databases:
+  - name: coffee-cinnamon-db
+    databaseName: coffee_cinnamon
+    plan: free
+
+services:
+  - type: web
+    name: coffee-cinnamon-api
+    runtime: node
+    rootDir: server
+    plan: free
+    # Install production dependencies and apply any new migrations on every deploy.
+    # (Render's pre-deploy command isn't available on the free plan, so it runs here.)
+    buildCommand: npm ci --omit=dev && npm run migrate
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TZ
+        value: Asia/Kolkata
+      - key: DATABASE_URL
+        fromDatabase:
+          name: coffee-cinnamon-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN
+        sync: false # e.g. https://coffee-cinnamon.vercel.app
+      - key: DEMO_MODE
+        value: "true" # set to "false" outside of demos

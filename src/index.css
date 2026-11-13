@@ -118,6 +118,15 @@ summary:focus-visible,
   animation: sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+@keyframes pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+.animate-pop {
+  animation: pop 0.28s ease-out;
+}
+
 @keyframes pulse-soft {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.45; }

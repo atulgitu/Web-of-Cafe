@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useAuth, useCart, useRole } from "../hooks/useAppContext";
+import { ROLE_LABELS } from "../data/site";
+import { useAuth, useCart, useToast } from "../hooks/useAppContext";
+import DemoSwitcher from "./DemoSwitcher";
 import Logo from "./Logo";
-import RoleSwitcher, { RoleSwitcherInline } from "./RoleSwitcher";
+import { CartIcon, UserIcon } from "./icons";
 
 const navLinks = [
   { to: "/", label: "Home", end: true },
@@ -10,12 +12,22 @@ const navLinks = [
   { to: "/rescue", label: "Rescue" },
   { to: "/impact", label: "Impact" },
   { to: "/about", label: "About" },
+  { to: "/contact", label: "Contact" },
 ];
 
-// One extra link depending on the demo role, so the bar never gets crowded.
+// Pages that don't fit in the phone tab bar. Before this menu existed, About and
+// Contact could only be reached on a phone by scrolling to the footer.
+const moreLinks = [
+  { to: "/about", label: "About the café" },
+  { to: "/contact", label: "Contact & opening hours" },
+  { to: "/offers", label: "Offers" },
+  { to: "/impact", label: "Impact" },
+];
+
+// One extra link for signed-in staff or partners.
 const roleLinks = {
-  staff: { to: "/dashboard", label: "Dashboard" },
-  partner: { to: "/partner", label: "My pickups" },
+  STAFF: { to: "/dashboard", label: "Kitchen" },
+  PARTNER: { to: "/partner", label: "Pickups" },
 };
 
 const linkClass = ({ isActive }) =>
@@ -25,42 +37,49 @@ const linkClass = ({ isActive }) =>
       : "text-charcoal-soft hover:text-espresso"
   }`;
 
+// Desktop: full navigation. Mobile: a slim top bar (logo, cart, account) — the
+// main links live in the bottom navigation instead.
 export default function Navbar() {
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
-  const { role } = useRole();
+  const { showToast } = useToast();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
   const accountRef = useRef(null);
-  const extra = roleLinks[role];
+  const moreRef = useRef(null);
+  const extra = user && roleLinks[user.role];
 
-  // Close menus when the route changes.
   const [lastPath, setLastPath] = useState(pathname);
   if (lastPath !== pathname) {
     setLastPath(pathname);
-    setMobileOpen(false);
     setAccountOpen(false);
+    setMoreOpen(false);
   }
 
+  // Close whichever dropdown is open on outside click or Escape.
   useEffect(() => {
-    if (!accountOpen) return;
-    const onDown = (e) => accountRef.current && !accountRef.current.contains(e.target) && setAccountOpen(false);
-    const onKey = (e) => e.key === "Escape" && setAccountOpen(false);
-    document.addEventListener("mousedown", onDown);
+    if (!accountOpen && !moreOpen) return;
+    const close = () => {
+      setAccountOpen(false);
+      setMoreOpen(false);
+    };
+    const onDown = (e) => !accountRef.current?.contains(e.target) && !moreRef.current?.contains(e.target) && close();
+    const onKey = (e) => e.key === "Escape" && close();
+    document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [accountOpen]);
+  }, [accountOpen, moreOpen]);
 
   return (
-    <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur-sm border-b border-line">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <Link to="/" className="shrink-0" aria-label="Brew & Care home">
-          <Logo size={32} />
+    <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur-sm border-b border-line pt-[env(safe-area-inset-top)]">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 lg:h-16 flex items-center justify-between gap-4">
+        <Link to="/" className="shrink-0" aria-label="Coffee Cinnamon home">
+          <Logo size={30} />
         </Link>
 
         <nav className="hidden lg:flex items-center" aria-label="Primary">
@@ -81,19 +100,19 @@ export default function Navbar() {
 
         <div className="flex items-center gap-1 sm:gap-2">
           <div className="hidden lg:block mr-1">
-            <RoleSwitcher />
+            <DemoSwitcher />
           </div>
 
           <Link
             to="/cart"
             aria-label={`Cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
-            className="relative p-2 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
+            className="relative flex items-center justify-center w-11 h-11 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
           >
             <CartIcon />
             {itemCount > 0 && (
               <span
                 key={itemCount}
-                className="absolute -top-0.5 -right-0.5 bg-caramel-dark text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center animate-fade-in nums"
+                className="absolute top-0.5 right-0.5 bg-caramel-dark text-white text-[10px] font-semibold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center animate-pop nums"
                 aria-hidden="true"
               >
                 {itemCount}
@@ -101,23 +120,51 @@ export default function Navbar() {
             )}
           </Link>
 
-          <div className="relative" ref={accountRef}>
+          <div className="relative lg:hidden" ref={moreRef}>
+            <button
+              type="button"
+              onClick={() => setMoreOpen((o) => !o)}
+              aria-expanded={moreOpen}
+              aria-controls="more-menu"
+              className="flex items-center gap-1.5 min-h-11 px-3 rounded-full text-sm font-medium text-charcoal-soft hover:bg-cream-dim hover:text-espresso"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+              More
+            </button>
+            {moreOpen && (
+              <nav id="more-menu" aria-label="More pages" className="absolute right-0 mt-2 w-60 bg-paper border border-line rounded-xl shadow-lg py-1 animate-fade-in">
+                {moreLinks.map((l) => (
+                  <NavLink
+                    key={l.to}
+                    to={l.to}
+                    className={({ isActive }) => `block px-4 py-3 text-sm hover:bg-cream-dim ${isActive ? "font-medium text-espresso" : "text-charcoal"}`}
+                  >
+                    {l.label}
+                  </NavLink>
+                ))}
+              </nav>
+            )}
+          </div>
+
+          <div className="relative hidden lg:block" ref={accountRef}>
             <button
               type="button"
               onClick={() => setAccountOpen((o) => !o)}
               aria-label="Account"
               aria-expanded={accountOpen}
-              className="p-2 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
+              className="p-2.5 rounded-full hover:bg-cream-dim text-charcoal-soft hover:text-espresso"
             >
               <UserIcon />
             </button>
             {accountOpen && (
-              <div className="absolute right-0 mt-2 w-52 bg-paper border border-line rounded-xl shadow-lg py-1 animate-fade-in">
+              <div className="absolute right-0 mt-2 w-56 bg-paper border border-line rounded-xl shadow-lg py-1 animate-fade-in">
                 {user ? (
                   <>
                     <div className="px-3 py-2 text-sm border-b border-line">
                       <p className="font-medium text-espresso truncate">{user.name}</p>
-                      {user.guest && <p className="text-xs text-charcoal-soft">Guest session</p>}
+                      <p className="text-xs text-charcoal-soft">{ROLE_LABELS[user.role]}</p>
                     </div>
                     <Link to="/profile" className="block px-3 py-2 text-sm hover:bg-cream-dim">
                       Orders &amp; contributions
@@ -126,6 +173,7 @@ export default function Navbar() {
                       type="button"
                       onClick={() => {
                         logout();
+                        showToast("Logged out");
                         navigate("/");
                       }}
                       className="w-full text-left px-3 py-2 text-sm hover:bg-cream-dim text-red-700"
@@ -135,78 +183,14 @@ export default function Navbar() {
                   </>
                 ) : (
                   <Link to="/login" className="block px-3 py-2 text-sm hover:bg-cream-dim">
-                    Log in or sign up
+                    Log in or create an account
                   </Link>
                 )}
               </div>
             )}
           </div>
-
-          <button
-            type="button"
-            className="lg:hidden p-2 rounded-full hover:bg-cream-dim text-charcoal-soft"
-            onClick={() => setMobileOpen((o) => !o)}
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-nav"
-          >
-            {mobileOpen ? <CloseIcon /> : <MenuIcon />}
-          </button>
         </div>
       </div>
-
-      {mobileOpen && (
-        <div id="mobile-nav" className="lg:hidden border-t border-line bg-cream max-h-[calc(100vh-4rem)] overflow-y-auto animate-fade-in">
-          <nav className="px-4 py-2 flex flex-col" aria-label="Mobile">
-            {[...navLinks, ...(extra ? [extra] : [])].map((l) => (
-              <NavLink
-                key={l.to}
-                to={l.to}
-                end={l.end}
-                className={({ isActive }) =>
-                  `py-3 text-base border-b border-line/70 ${isActive ? "text-espresso font-medium" : "text-charcoal-soft"}`
-                }
-              >
-                {l.label}
-              </NavLink>
-            ))}
-          </nav>
-          <div className="px-4 py-4">
-            <RoleSwitcherInline onDone={() => setMobileOpen(false)} />
-          </div>
-        </div>
-      )}
     </header>
-  );
-}
-
-function CartIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path d="M5 8h14l-1.2 11.2a2 2 0 01-2 1.8H8.2a2 2 0 01-2-1.8L5 8z" strokeLinejoin="round" />
-      <path d="M9 8V6.5a3 3 0 016 0V8" strokeLinecap="round" />
-    </svg>
-  );
-}
-function UserIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c1.5-4 5-6 8-6s6.5 2 8 6" strokeLinecap="round" />
-    </svg>
-  );
-}
-function MenuIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path d="M4 7h16M4 12h16M4 17h10" strokeLinecap="round" />
-    </svg>
-  );
-}
-function CloseIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-      <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-    </svg>
   );
 }

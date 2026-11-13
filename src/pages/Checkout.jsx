@@ -1,19 +1,28 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import OrderSummary from "../components/OrderSummary";
 import { Spinner } from "../components/ui";
-import { useAuth, useCart, useRescue, useToast } from "../hooks/useAppContext";
-import { contributionNote } from "../lib/impact";
+import { CAFE } from "../data/site";
+import { useAuth, useCart } from "../hooks/useAppContext";
+import useOnline from "../hooks/useOnline";
+import useQuote from "../hooks/useQuote";
+import { api } from "../lib/api";
 import { formatRupees } from "../lib/format";
-import { btn, container, field } from "../lib/styles";
+import { canOrderNow, pickupSlots } from "../lib/hours";
+import { rememberOrder } from "../lib/orders";
+import { btn, container, field, focusFirstInvalid } from "../lib/styles";
 
-const steps = ["Details", "Payment"];
+const steps = ["Your details", "Review"];
+// Same rule as the server: an Indian mobile number, with or without +91 / 0.
+const MOBILE = /^(?:\+?91|0)?[6-9]\d{9}$/;
+const ASAP = "asap";
 
-function Field({ id, label, error, children }) {
+function Field({ id, label, hint, error, children }) {
   return (
     <div>
       <label htmlFor={id} className={field.label}>
         {label}
+        {hint && <span className="font-normal text-charcoal-soft"> {hint}</span>}
       </label>
       {children}
       {error && (
@@ -28,91 +37,85 @@ function Field({ id, label, error, children }) {
 const inputProps = (id, error) => ({
   id,
   className: field.input,
-  "aria-invalid": !!error,
+  "aria-invalid": Boolean(error),
   "aria-describedby": error ? `${id}-error` : undefined,
 });
 
 export default function Checkout() {
-  const { lines, total, donation, clearCart } = useCart();
-  const { user, addOrder } = useAuth();
-  const { recordDonation } = useRescue();
-  const { showToast } = useToast();
+  const { lines, orderRequest, clearCart } = useCart();
+  const { user } = useAuth();
+  const { quote, error: quoteError, loading: quoting } = useQuote();
+  const online = useOnline();
   const navigate = useNavigate();
 
+  // Work the time options out once, when the page opens.
+  const [slots] = useState(() => pickupSlots());
+  const [asapAllowed] = useState(() => canOrderNow());
+
   const [step, setStep] = useState(1);
-  const [fulfilment, setFulfilment] = useState("pickup");
   const [form, setForm] = useState({
-    name: user?.name && !user.guest ? user.name : "",
+    name: user?.name || "",
     phone: user?.phone || "",
-    address: user?.addresses?.[0]?.line || "",
+    pickup: asapAllowed ? ASAP : slots[0]?.value || "",
+    notes: "",
   });
   const [errors, setErrors] = useState({});
-  const [paymentMethod, setPaymentMethod] = useState("upi");
-  const [upi, setUpi] = useState("");
-  const [card, setCard] = useState({ number: "", expiry: "", cvv: "", name: "" });
-  const [processing, setProcessing] = useState(false);
+  const [placing, setPlacing] = useState(false);
+  const [submitError, setSubmitError] = useState("");
+  // Set synchronously on the first click. The disabled button only takes effect after
+  // React re-renders, so fast double clicks used to send several orders.
+  const submitting = useRef(false);
 
-  if (lines.length === 0 && !processing) return <Navigate to="/cart" replace />;
+  if (lines.length === 0 && !placing) return <Navigate to="/cart" replace />;
 
-  const prepTime = fulfilment === "pickup" ? "12–15 mins" : "30–40 mins";
+  const set = (key) => (e) => setForm({ ...form, [key]: e.target.value });
+  const pickupLabel = form.pickup === ASAP ? `As soon as possible (about ${CAFE.pickupMinutes} min)` : slots.find((s) => s.value === form.pickup)?.label;
 
   const validateDetails = () => {
     const errs = {};
-    if (!form.name.trim()) errs.name = "Please enter your name";
-    if (!/^[0-9+\-\s]{7,15}$/.test(form.phone)) errs.phone = "Enter a valid phone number";
-    if (fulfilment === "delivery" && !form.address.trim()) errs.address = "We need an address to deliver to";
-    setErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const validatePayment = () => {
-    const errs = {};
-    if (paymentMethod === "upi" && !/^[\w.-]+@[\w]+$/.test(upi.trim())) errs.upi = "Enter a UPI ID like name@bank";
-    if (paymentMethod === "card") {
-      if (!/^\d{16}$/.test(card.number.replace(/\s/g, ""))) errs.number = "Enter a 16-digit card number";
-      if (!/^\d{2}\/\d{2}$/.test(card.expiry)) errs.expiry = "Use MM/YY";
-      if (!/^\d{3}$/.test(card.cvv)) errs.cvv = "3 digits";
-      if (!card.name.trim()) errs.cardName = "Name on card is required";
-    }
+    if (!form.name.trim()) errs.name = "Please enter your name.";
+    if (!MOBILE.test(form.phone.replace(/[\s-]/g, ""))) errs.phone = "Enter a 10-digit mobile number, like 98765 43210.";
+    if (!form.pickup) errs.pickup = "Please choose a pickup time.";
+    if (form.notes.length > 300) errs.notes = "Please keep notes under 300 characters.";
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
 
   const placeOrder = async () => {
-    if (!validatePayment()) return;
-    setProcessing(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    const order = {
-      id: `BC-${Math.floor(10000 + Math.random() * 89999)}`,
-      date: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
-      lines,
-      items: lines.map((l) => l.name),
-      total,
-      donation,
-      fulfilment,
-      prepTime,
-      customer: form,
-      status: "Preparing",
-    };
+    if (submitting.current) return;
+    submitting.current = true;
+    setSubmitError("");
+    setPlacing(true);
     try {
-      sessionStorage.setItem("brewcare_last_order", JSON.stringify(order));
-    } catch {
-      // confirmation page falls back to the profile if storage is blocked
+      const { order } = await api("/orders", {
+        method: "POST",
+        body: {
+          ...orderRequest,
+          customer: { name: form.name.trim(), phone: form.phone },
+          pickupAt: form.pickup === ASAP ? null : form.pickup,
+          notes: form.notes.trim() || undefined,
+        },
+      });
+      // Saved on the server first, then kept on this device for the confirmation page.
+      rememberOrder(order);
+      clearCart();
+      navigate(`/order/${order.id}`, { replace: true, state: { order } });
+    } catch (err) {
+      submitting.current = false;
+      setPlacing(false);
+      setSubmitError(err.message || "We couldn't save your order. Please try again.");
+      // The server names fields like "customer.phone"; show those on the details step.
+      const f = err.fields || {};
+      const details = { name: f["customer.name"], phone: f["customer.phone"], notes: f.notes, pickup: f.pickupAt };
+      if (Object.values(details).some(Boolean)) {
+        setErrors(details);
+        setStep(1);
+      }
     }
-    addOrder({ id: order.id, date: order.date, items: order.items, total, donation, status: "Preparing" });
-    if (donation > 0) recordDonation(donation);
-    clearCart();
-    showToast(donation > 0 ? "Order placed — thank you for the contribution" : "Order placed");
-    navigate("/order-confirmation", { replace: true });
   };
 
-  const segment = (active) =>
-    `flex-1 py-2.5 rounded-lg border text-sm font-medium transition-colors ${
-      active ? "border-espresso bg-cream-dim text-espresso" : "border-line text-charcoal-soft hover:border-espresso/30"
-    }`;
-
   return (
-    <div className={`${container} py-10`}>
+    <div className={`${container} py-8 sm:py-10`}>
       <h1 className="font-serif-display text-3xl sm:text-4xl text-espresso mb-6">Checkout</h1>
 
       <ol className="flex items-center gap-3 mb-8 text-sm" aria-label="Checkout steps">
@@ -136,155 +139,136 @@ export default function Checkout() {
 
       <div className="grid lg:grid-cols-[1fr_340px] gap-8 lg:gap-12 items-start">
         <div className="bg-paper border border-line rounded-xl p-5 sm:p-6">
+          {submitError && (
+            <p role="alert" className="text-sm text-red-700 mb-4">
+              {submitError}
+            </p>
+          )}
+
           {step === 1 && (
             <form
               noValidate
+              aria-label="Your details"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (validateDetails()) {
-                  setErrors({});
-                  setStep(2);
-                }
+                if (validateDetails()) setStep(2);
+                else focusFirstInvalid(e.currentTarget);
               }}
               className="space-y-5"
             >
-              <Field id="co-name" label="Full name" error={errors.name}>
-                <input {...inputProps("co-name", errors.name)} autoComplete="name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+              <p className="text-sm text-charcoal-soft">
+                Pickup only, paid at the counter. You'll confirm the order by sending it to us on WhatsApp in the next step.
+              </p>
+              <Field id="co-name" label="Your name" error={errors.name}>
+                <input {...inputProps("co-name", errors.name)} autoComplete="name" maxLength={80} value={form.name} onChange={set("name")} />
               </Field>
-              <Field id="co-phone" label="Phone number" error={errors.phone}>
-                <input
-                  {...inputProps("co-phone", errors.phone)}
-                  type="tel"
-                  autoComplete="tel"
-                  placeholder="+91 98765 43210"
-                  value={form.phone}
-                  onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              <Field id="co-phone" label="Mobile number" hint="(so we can reach you about the order)" error={errors.phone}>
+                <input {...inputProps("co-phone", errors.phone)} type="tel" inputMode="tel" autoComplete="tel" placeholder="98765 43210" value={form.phone} onChange={set("phone")} />
+              </Field>
+              <Field id="co-pickup" label="Pickup time" error={errors.pickup}>
+                <select {...inputProps("co-pickup", errors.pickup)} value={form.pickup} onChange={set("pickup")}>
+                  {asapAllowed && <option value={ASAP}>As soon as possible (about {CAFE.pickupMinutes} min)</option>}
+                  {slots.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+                {!asapAllowed && <p className="text-xs text-charcoal-soft mt-1">We're closed right now, so the earliest time is when we next open.</p>}
+              </Field>
+              <Field id="co-notes" label="Notes" hint="(optional)" error={errors.notes}>
+                <textarea
+                  {...inputProps("co-notes", errors.notes)}
+                  className={`${field.input} resize-y`}
+                  rows={2}
+                  maxLength={300}
+                  placeholder="Allergies, who's collecting, anything else"
+                  value={form.notes}
+                  onChange={set("notes")}
                 />
               </Field>
-
-              <fieldset>
-                <legend className={field.label}>Pickup or delivery?</legend>
-                <div className="flex gap-3">
-                  {["pickup", "delivery"].map((opt) => (
-                    <button key={opt} type="button" aria-pressed={fulfilment === opt} onClick={() => setFulfilment(opt)} className={`${segment(fulfilment === opt)} capitalize`}>
-                      {opt}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              {fulfilment === "delivery" && (
-                <Field id="co-address" label="Delivery address" error={errors.address}>
-                  <textarea
-                    {...inputProps("co-address", errors.address)}
-                    className={`${field.input} resize-none`}
-                    rows={2}
-                    autoComplete="street-address"
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  />
-                </Field>
-              )}
-
-              <p className="text-sm text-charcoal-soft">
-                Ready in about <span className="font-medium text-espresso">{prepTime}</span>
-                {fulfilment === "pickup" && " at the front counter"}.
-              </p>
-
               <button type="submit" className={`${btn.primary} w-full py-3`}>
-                Continue to payment
+                Review order
               </button>
             </form>
           )}
 
           {step === 2 && (
             <div className="space-y-5">
-              <p className="text-xs text-charcoal-soft bg-cream-dim rounded-lg px-3 py-2">
-                Demo payment screen — nothing is charged. Any valid-looking details will work.
-              </p>
+              <h2 className="font-medium text-espresso">Check your order</h2>
+              <dl className="text-sm grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
+                <dt className="text-charcoal-soft">Name</dt>
+                <dd className="text-charcoal break-words">{form.name.trim()}</dd>
+                <dt className="text-charcoal-soft">Mobile</dt>
+                <dd className="text-charcoal nums">{form.phone}</dd>
+                <dt className="text-charcoal-soft">Pickup</dt>
+                <dd className="text-charcoal">{pickupLabel}</dd>
+                <dt className="text-charcoal-soft">Payment</dt>
+                <dd className="text-charcoal">At the counter when you collect</dd>
+                <dt className="text-charcoal-soft">Notes</dt>
+                <dd className="text-charcoal break-words">{form.notes.trim() || "None"}</dd>
+              </dl>
+              <button type="button" onClick={() => setStep(1)} className={btn.link}>
+                Change details
+              </button>
 
-              <fieldset>
-                <legend className="sr-only">Payment method</legend>
-                <div className="flex gap-3">
-                  {[
-                    ["upi", "UPI"],
-                    ["card", "Card"],
-                    ["cod", fulfilment === "pickup" ? "Pay at counter" : "Cash"],
-                  ].map(([m, label]) => (
-                    <button key={m} type="button" aria-pressed={paymentMethod === m} onClick={() => setPaymentMethod(m)} className={segment(paymentMethod === m)}>
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
+              <div className="border-t border-line pt-4 text-sm text-charcoal leading-relaxed">
+                <p className="font-medium text-espresso">What happens next</p>
+                <ol className="mt-2 space-y-1 list-decimal pl-5 text-charcoal-soft">
+                  <li>We save your order and give it an order number.</li>
+                  <li>WhatsApp opens with the order typed out, addressed to Coffee Cinnamon ({CAFE.phone}).</li>
+                  <li>You press Send. The kitchen starts once we've seen your message.</li>
+                </ol>
+              </div>
 
-              {paymentMethod === "upi" && (
-                <Field id="co-upi" label="UPI ID" error={errors.upi}>
-                  <input {...inputProps("co-upi", errors.upi)} placeholder="yourname@okbank" value={upi} onChange={(e) => setUpi(e.target.value)} />
-                </Field>
+              {quoteError && (
+                <p role="alert" className="text-sm text-red-700">
+                  {quoteError.message}{" "}
+                  <Link to="/cart" className="underline underline-offset-2">
+                    Fix it in your cart
+                  </Link>
+                </p>
               )}
-
-              {paymentMethod === "card" && (
-                <div className="space-y-4">
-                  <Field id="co-card" label="Card number" error={errors.number}>
-                    <input
-                      {...inputProps("co-card", errors.number)}
-                      inputMode="numeric"
-                      autoComplete="cc-number"
-                      placeholder="4242 4242 4242 4242"
-                      value={card.number}
-                      onChange={(e) => setCard({ ...card, number: e.target.value })}
-                    />
-                  </Field>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Field id="co-exp" label="Expiry" error={errors.expiry}>
-                      <input {...inputProps("co-exp", errors.expiry)} autoComplete="cc-exp" placeholder="MM/YY" value={card.expiry} onChange={(e) => setCard({ ...card, expiry: e.target.value })} />
-                    </Field>
-                    <Field id="co-cvv" label="CVV" error={errors.cvv}>
-                      <input {...inputProps("co-cvv", errors.cvv)} inputMode="numeric" autoComplete="cc-csc" placeholder="123" value={card.cvv} onChange={(e) => setCard({ ...card, cvv: e.target.value })} />
-                    </Field>
-                  </div>
-                  <Field id="co-cardname" label="Name on card" error={errors.cardName}>
-                    <input {...inputProps("co-cardname", errors.cardName)} autoComplete="cc-name" value={card.name} onChange={(e) => setCard({ ...card, name: e.target.value })} />
-                  </Field>
-                </div>
-              )}
-
-              {paymentMethod === "cod" && <p className="text-sm text-charcoal-soft">Pay when you collect your order.</p>}
+              {!online && <p className="text-sm text-caramel-dark">You're offline. Reconnect to place your order.</p>}
 
               <div className="flex gap-3 pt-2">
                 <button type="button" onClick={() => setStep(1)} className={btn.secondary}>
                   Back
                 </button>
-                <button type="button" onClick={placeOrder} disabled={processing} className={`${btn.primary} flex-1 py-3`}>
-                  {processing && <Spinner />}
-                  {processing ? "Placing order…" : `Place order · ${formatRupees(total)}`}
+                <button
+                  type="button"
+                  onClick={placeOrder}
+                  disabled={placing || !online || !quote || quoting || Boolean(quoteError) || Boolean(quote?.couponError)}
+                  className={`${btn.primary} flex-1 py-3`}
+                >
+                  {placing && <Spinner />}
+                  {placing ? "Saving your order…" : quote ? `Place order · ${formatRupees(quote.total)}` : "Calculating…"}
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        <aside className="bg-paper border border-line rounded-xl p-5 lg:sticky lg:top-24">
-          <h2 className="font-medium text-espresso mb-3">Your order</h2>
+        <aside className="bg-paper border border-line rounded-xl p-5 lg:sticky lg:top-24" aria-labelledby="co-summary">
+          <h2 id="co-summary" className="font-medium text-espresso mb-3">
+            Your order
+          </h2>
           <ul className="text-sm space-y-1.5 mb-4 pb-4 border-b border-line">
-            {lines.map((l) => (
+            {lines.map((l, i) => (
               <li key={l.key} className="flex justify-between gap-3">
-                <span className="text-charcoal">
+                <span className="text-charcoal min-w-0 break-words">
                   {l.quantity} × {l.name}
                 </span>
-                <span className="text-charcoal-soft nums">{formatRupees(l.unitPrice * l.quantity)}</span>
+                <span className="text-charcoal-soft nums shrink-0">{quote ? formatRupees(quote.lines[i]?.lineTotal ?? 0) : ""}</span>
               </li>
             ))}
           </ul>
-          <OrderSummary />
-          {donation > 0 ? (
-            <p className="mt-4 text-xs text-leaf leading-relaxed">{contributionNote(donation)}</p>
-          ) : (
-            <p className="mt-4 text-xs text-charcoal-soft leading-relaxed">
-              Want to add a community meal? <Link to="/cart" className="underline underline-offset-2 hover:text-espresso">You can from your cart.</Link>
-            </p>
-          )}
+          <OrderSummary quote={quote} loading={quoting} />
+          <p className="mt-4 text-xs text-charcoal-soft">
+            <Link to="/cart" className="underline underline-offset-2 hover:text-espresso">
+              Edit cart
+            </Link>
+          </p>
         </aside>
       </div>
     </div>

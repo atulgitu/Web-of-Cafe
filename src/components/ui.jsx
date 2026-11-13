@@ -21,7 +21,9 @@ export function PageHeader({ eyebrow, title, children, aside }) {
 
 const statusStyles = {
   available: { label: "Available", cls: "bg-leaf-soft text-leaf", dot: "bg-leaf" },
-  reserved: { label: "Reserved", cls: "bg-[#F6E7D6] text-caramel-dark", dot: "bg-caramel" },
+  // espresso-light text: caramel-dark on this tint was only 4.3:1, below the 4.5:1 AA minimum
+  reserved: { label: "Reserved", cls: "bg-[#F6E7D6] text-espresso-light", dot: "bg-caramel" },
+  expired: { label: "Past best-before", cls: "bg-cream-dim text-charcoal-soft", dot: "bg-charcoal-soft/60" },
   collected: { label: "Collected", cls: "bg-cream-dim text-charcoal-soft", dot: "bg-charcoal-soft/60" },
 };
 
@@ -66,7 +68,7 @@ export function VegMark({ veg, className = "" }) {
   );
 }
 
-export function QuantityStepper({ value, onChange, min = 1, label = "Quantity", size = "md" }) {
+export function QuantityStepper({ value, onChange, min = 1, max = 50, label = "Quantity", size = "md" }) {
   const dim = size === "sm" ? "w-8 h-8" : "w-10 h-10";
   return (
     <div className="inline-flex items-center border border-line rounded-full bg-paper" role="group" aria-label={label}>
@@ -85,7 +87,8 @@ export function QuantityStepper({ value, onChange, min = 1, label = "Quantity", 
       <button
         type="button"
         onClick={() => onChange(value + 1)}
-        className={`${dim} flex items-center justify-center text-lg text-charcoal-soft hover:text-espresso`}
+        disabled={value >= max}
+        className={`${dim} flex items-center justify-center text-lg text-charcoal-soft hover:text-espresso disabled:opacity-40`}
         aria-label="Increase quantity"
       >
         +
@@ -148,6 +151,21 @@ export function Stat({ label, value, tone }) {
     <div className="flex flex-col-reverse">
       <dt className="text-xs text-charcoal-soft mt-1">{label}</dt>
       <dd className={`font-serif-display text-2xl sm:text-3xl nums ${tone === "leaf" ? "text-leaf" : "text-espresso"}`}>{value}</dd>
+    </div>
+  );
+}
+
+// Shown when a request fails. `onRetry` re-runs it.
+export function ErrorState({ title = "We couldn't load this.", error, onRetry }) {
+  return (
+    <div role="alert" className="border border-red-200 bg-red-50/50 rounded-xl px-5 py-6 text-center">
+      <p className="font-medium text-red-800">{title}</p>
+      {error?.message && <p className="text-sm text-red-800/80 mt-1">{error.message}</p>}
+      {onRetry && (
+        <button type="button" onClick={onRetry} className="mt-4 inline-flex rounded-full border border-red-300 px-4 py-1.5 text-sm font-medium text-red-800 hover:bg-red-100">
+          Try again
+        </button>
+      )}
     </div>
   );
 }

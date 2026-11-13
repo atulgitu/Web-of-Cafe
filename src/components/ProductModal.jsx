@@ -1,23 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { TAGS } from "../data/menu";
+import { TAGS } from "../data/site";
 import { useCart, useToast } from "../hooks/useAppContext";
 import { formatRupees } from "../lib/format";
 import { btn, field } from "../lib/styles";
 import FoodImage from "./FoodImage";
 import { QuantityStepper, Tag, VegMark } from "./ui";
 
-const upcharge = (label) => {
-  const match = label.match(/\+₹(\d+)/);
-  return match ? Number(match[1]) : 0;
-};
-
 export default function ProductModal({ item, onClose }) {
   const { addToCart } = useCart();
   const { showToast } = useToast();
-  const [size, setSize] = useState(item.sizes[0]);
+  const [size, setSize] = useState(item.sizes[0]?.label ?? null);
   const [addons, setAddons] = useState([]);
   const [quantity, setQuantity] = useState(1);
   const [instructions, setInstructions] = useState("");
+  const left = item.batch ? item.batch.left : Infinity;
+  const soldOut = left <= 0;
   const closeRef = useRef(null);
   const dialogRef = useRef(null);
 
@@ -49,8 +46,9 @@ export default function ProductModal({ item, onClose }) {
     };
   }, [onClose]);
 
-  const sizeUpcharge = size === "Large" || size === "Full" ? 30 : upcharge(size);
-  const unitPrice = item.price + sizeUpcharge + addons.reduce((s, a) => s + upcharge(a), 0);
+  // Preview only — the server recalculates prices from the menu when you order.
+  const sizeExtra = item.sizes.find((s) => s.label === size)?.extra || 0;
+  const unitPrice = item.price + sizeExtra + item.addons.filter((a) => addons.includes(a.label)).reduce((s, a) => s + a.extra, 0);
 
   const toggleAddon = (a) => setAddons((prev) => (prev.includes(a) ? prev.filter((x) => x !== a) : [...prev, a]));
 
@@ -93,7 +91,7 @@ export default function ProductModal({ item, onClose }) {
                 {item.name}
               </h2>
               <p className="mt-1 text-xs text-charcoal-soft">
-                {item.category} · Rated {item.rating.toFixed(1)} by customers
+                {item.category}
               </p>
             </div>
             <span className="font-semibold text-lg text-espresso whitespace-nowrap nums">{formatRupees(unitPrice)}</span>
@@ -104,13 +102,13 @@ export default function ProductModal({ item, onClose }) {
           {(item.tags.length > 0 || item.batch) && (
             <div className="mt-3 flex flex-wrap items-center gap-1.5">
               {item.tags.map((t) => (
-                <Tag key={t} tone={TAGS[t].tone}>
-                  {TAGS[t].label}
+                <Tag key={t} tone={TAGS[t]?.tone}>
+                  {TAGS[t]?.label || t}
                 </Tag>
               ))}
               {item.batch && (
                 <span className="text-xs text-caramel-dark ml-1">
-                  {item.batch.note} · only {item.batch.left} left
+                  {item.batch.note} · {soldOut ? "sold out for today" : `only ${left} left`}
                 </span>
               )}
             </div>
@@ -124,7 +122,7 @@ export default function ProductModal({ item, onClose }) {
             <fieldset className="mt-6">
               <legend className="text-sm font-semibold text-charcoal mb-2">Size</legend>
               <div className="flex gap-2 flex-wrap">
-                {item.sizes.map((s) => (
+                {item.sizes.map(({ label: s, extra }) => (
                   <label
                     key={s}
                     className={`cursor-pointer px-4 py-1.5 rounded-full text-sm border transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-caramel-dark ${
@@ -133,6 +131,7 @@ export default function ProductModal({ item, onClose }) {
                   >
                     <input type="radio" name="size" value={s} checked={size === s} onChange={() => setSize(s)} className="sr-only" />
                     {s}
+                    {extra > 0 && <span className="opacity-70"> +₹{extra}</span>}
                   </label>
                 ))}
               </div>
@@ -143,10 +142,11 @@ export default function ProductModal({ item, onClose }) {
             <fieldset className="mt-5">
               <legend className="text-sm font-semibold text-charcoal mb-2">Customise</legend>
               <div className="flex flex-col gap-2">
-                {item.addons.map((a) => (
-                  <label key={a} className="flex items-center gap-2.5 text-sm text-charcoal-soft cursor-pointer w-fit">
-                    <input type="checkbox" checked={addons.includes(a)} onChange={() => toggleAddon(a)} className="w-4 h-4 accent-caramel-dark" />
+                {item.addons.map(({ label: a, extra }) => (
+                  <label key={a} className="flex items-center gap-3 text-sm text-charcoal-soft cursor-pointer w-fit min-h-8">
+                    <input type="checkbox" checked={addons.includes(a)} onChange={() => toggleAddon(a)} className="w-5 h-5 accent-caramel-dark" />
                     {a}
+                    {extra > 0 && <span className="text-charcoal-soft/80 nums">+₹{extra}</span>}
                   </label>
                 ))}
               </div>
@@ -168,9 +168,15 @@ export default function ProductModal({ item, onClose }) {
           </div>
 
           <div className="mt-6 flex items-center gap-3">
-            <QuantityStepper value={quantity} onChange={(q) => setQuantity(Math.max(1, q))} />
-            <button type="button" onClick={handleAdd} className={`${btn.primary} flex-1 py-3`}>
-              Add to cart · <span className="nums">{formatRupees(unitPrice * quantity)}</span>
+            <QuantityStepper value={quantity} max={left} onChange={(q) => setQuantity(Math.max(1, q))} />
+            <button type="button" onClick={handleAdd} disabled={soldOut} className={`${btn.primary} flex-1 py-3`}>
+              {soldOut ? (
+                "Sold out today"
+              ) : (
+                <>
+                  Add to cart · <span className="nums">{formatRupees(unitPrice * quantity)}</span>
+                </>
+              )}
             </button>
           </div>
         </div>

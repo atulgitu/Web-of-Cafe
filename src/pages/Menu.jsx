@@ -2,8 +2,9 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import MenuItemCard from "../components/MenuItemCard";
 import ProductModal from "../components/ProductModal";
-import { EmptyState, PageHeader } from "../components/ui";
-import { categories, menuItems } from "../data/menu";
+import { EmptyState, ErrorState, PageHeader, Skeleton } from "../components/ui";
+import { MENU_CATEGORIES as categories } from "../data/site";
+import useMenu from "../hooks/useMenu";
 import { btn, container } from "../lib/styles";
 
 const sorters = {
@@ -21,6 +22,7 @@ export default function Menu() {
   const lowWaste = params.get("lowwaste") === "1";
   const sort = params.get("sort") || "popular";
   const [activeItem, setActiveItem] = useState(null);
+  const { items: menuItems, loading, error, fromCache } = useMenu();
 
   const update = (key, value) => {
     const next = new URLSearchParams(params);
@@ -37,7 +39,7 @@ export default function Menu() {
       .filter((i) => !lowWaste || i.tags.includes("low-waste"))
       .filter((i) => !q || i.name.toLowerCase().includes(q) || i.description.toLowerCase().includes(q))
       .sort(sorters[sort] || sorters.popular);
-  }, [category, search, vegOnly, lowWaste, sort]);
+  }, [menuItems, category, search, vegOnly, lowWaste, sort]);
 
   // With no narrowing filters, show the menu in sections like a printed menu.
   const grouped = category === "All" && !search.trim() && sort === "popular";
@@ -46,7 +48,7 @@ export default function Menu() {
     : [{ name: null, items: filtered }];
 
   const chip = (active) =>
-    `px-3.5 py-1.5 rounded-full text-sm font-medium whitespace-nowrap border transition-colors ${
+    `min-h-10 sm:min-h-9 px-4 rounded-full text-sm font-medium whitespace-nowrap border transition-colors ${
       active ? "bg-espresso text-cream border-espresso" : "border-line bg-paper text-charcoal-soft hover:border-caramel hover:text-espresso"
     }`;
 
@@ -54,9 +56,10 @@ export default function Menu() {
     <div className={`${container} py-10`}>
       <PageHeader eyebrow="Order for pickup or delivery" title="Menu">
         Coffee roasted in Chikmagalur, breakfast till noon, and meals cooked in forecast-sized batches.
+        {fromCache && error && <span className="block text-sm mt-1">Showing the menu saved on this device — prices are confirmed when you order.</span>}
       </PageHeader>
 
-      <div className="sticky top-16 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 bg-cream/95 backdrop-blur-sm py-3 border-b border-line mb-8">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:top-16 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 bg-cream/95 backdrop-blur-sm py-3 border-b border-line mb-8">
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
           <div className="relative sm:w-72">
             <label htmlFor="menu-search" className="sr-only">
@@ -107,7 +110,15 @@ export default function Menu() {
         </nav>
       </div>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5" aria-busy="true" aria-label="Loading the menu">
+          {Array.from({ length: 8 }, (_, i) => (
+            <Skeleton key={i} className="h-72 rounded-xl" />
+          ))}
+        </div>
+      ) : error && !menuItems.length ? (
+        <ErrorState title="We couldn't load the menu." error={error} onRetry={() => window.location.reload()} />
+      ) : filtered.length === 0 ? (
         <EmptyState
           title="Nothing matches that."
           action={

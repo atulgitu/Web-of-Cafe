@@ -1,7 +1,10 @@
 import { useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
+import BottomNav from "./components/BottomNav";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
+import OfflineBanner from "./components/OfflineBanner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import StickyMiniCart from "./components/StickyMiniCart";
 import About from "./pages/About";
@@ -20,40 +23,35 @@ import Partner from "./pages/Partner";
 import Profile from "./pages/Profile";
 import Rescue from "./pages/Rescue";
 
+const BRAND = "Coffee Cinnamon";
 const titles = {
-  "/": "Brew & Care — Good food shouldn't go to waste",
-  "/menu": "Menu · Brew & Care",
-  "/rescue": "Rescue board · Brew & Care",
-  "/impact": "Impact · Brew & Care",
-  "/about": "About the project · Brew & Care",
-  "/dashboard": "Kitchen dashboard · Brew & Care",
-  "/partner": "Partner pickups · Brew & Care",
-  "/cart": "Cart · Brew & Care",
-  "/checkout": "Checkout · Brew & Care",
-  "/profile": "Your account · Brew & Care",
-  "/login": "Log in · Brew & Care",
-  "/offers": "Offers · Brew & Care",
-  "/contact": "Contact · Brew & Care",
-  "/order-confirmation": "Order confirmed · Brew & Care",
+  "/": `${BRAND} — Good food shouldn't go to waste`,
+  "/menu": `Menu · ${BRAND}`,
+  "/rescue": `Food rescue · ${BRAND}`,
+  "/impact": `Impact · ${BRAND}`,
+  "/about": `About · ${BRAND}`,
+  "/dashboard": `Kitchen dashboard · ${BRAND}`,
+  "/partner": `Partner pickups · ${BRAND}`,
+  "/cart": `Cart · ${BRAND}`,
+  "/checkout": `Checkout · ${BRAND}`,
+  "/profile": `Your account · ${BRAND}`,
+  "/login": `Log in · ${BRAND}`,
+  "/offers": `Offers · ${BRAND}`,
+  "/contact": `Contact · ${BRAND}`,
 };
 
 // Scroll to the top (or to #hash) on navigation, and keep the tab title in sync.
 function RouteEffects() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
-    document.title = titles[pathname] || "Brew & Care";
-    if (hash) {
-      document.getElementById(hash.slice(1))?.scrollIntoView();
-    } else {
-      window.scrollTo(0, 0);
-    }
+    document.title = titles[pathname] || (pathname.startsWith("/order/") ? `Your order · ${BRAND}` : BRAND);
+    if (hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+    else window.scrollTo(0, 0);
   }, [pathname, hash]);
   return null;
 }
 
-function protect(element) {
-  return <ProtectedRoute>{element}</ProtectedRoute>;
-}
+const protect = (element) => <ProtectedRoute>{element}</ProtectedRoute>;
 
 export default function App() {
   const { pathname } = useLocation();
@@ -62,6 +60,7 @@ export default function App() {
     return (
       <>
         <RouteEffects />
+        <OfflineBanner />
         <Login />
       </>
     );
@@ -73,27 +72,36 @@ export default function App() {
       <a href="#main" className="skip-link">
         Skip to content
       </a>
+      <OfflineBanner />
       <Navbar />
-      <main id="main" className="pb-20 md:pb-0 min-h-[60vh]">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/menu" element={<Menu />} />
-          <Route path="/rescue" element={<Rescue />} />
-          <Route path="/impact" element={<Impact />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/partner" element={<Partner />} />
-          <Route path="/cart" element={<Cart />} />
-          <Route path="/checkout" element={protect(<Checkout />)} />
-          <Route path="/order-confirmation" element={protect(<OrderConfirmation />)} />
-          <Route path="/profile" element={protect(<Profile />)} />
-          <Route path="/offers" element={<Offers />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+      <main id="main" className="min-h-[60vh]">
+        {/* keyed by path so navigating away from a crashed page recovers */}
+        <ErrorBoundary key={pathname}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/menu" element={<Menu />} />
+            <Route path="/rescue" element={<Rescue />} />
+            <Route path="/impact" element={<Impact />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/partner" element={<Partner />} />
+            <Route path="/cart" element={<Cart />} />
+            {/* No account needed to order: details are collected at checkout */}
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/order/:id" element={<OrderConfirmation />} />
+            <Route path="/profile" element={protect(<Profile />)} />
+            <Route path="/offers" element={<Offers />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
-      <Footer />
+      {/* on phones, leave room under the footer for the tab bar and the cart bar */}
+      <div className="pb-[calc(8rem+env(safe-area-inset-bottom))] lg:pb-0">
+        <Footer />
+      </div>
       <StickyMiniCart />
+      <BottomNav />
     </>
   );
 }
