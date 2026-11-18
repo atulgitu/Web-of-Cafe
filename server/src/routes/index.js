@@ -13,9 +13,14 @@ import * as rescue from "../controllers/rescueController.js";
 import * as demo from "../controllers/demoController.js";
 import { optionalAuth, requireAuth, requireRole } from "../middleware/auth.js";
 import { validate } from "../middleware/validate.js";
+import { notFound } from "../utils/errors.js";
 import * as s from "./schemas.js";
 
 const router = Router();
+
+// Orders and rescue listings have numeric ids. A link like /rescue/abc used to reach the
+// database and come back as a 500; now it is simply "not found".
+const numericId = (req, res, next) => next(/^\d{1,9}$/.test(req.params.id) ? undefined : notFound());
 const staff = [requireAuth, requireRole("STAFF")];
 const partner = [requireAuth, requireRole("PARTNER")];
 const staffOrPartner = [requireAuth, requireRole("STAFF", "PARTNER")];
@@ -59,8 +64,8 @@ router.post("/orders/quote", validate(s.quoteSchema), orders.getQuote);
 router.post("/orders", orderLimiter, optionalAuth, validate(s.orderSchema), orders.create);
 router.get("/orders/my", requireAuth, orders.mine);
 router.get("/orders/today", ...staff, orders.today);
-router.get("/orders/:id", requireAuth, orders.getOne);
-router.patch("/orders/:id/status", ...staff, validate(s.orderStatusSchema), orders.updateStatus);
+router.get("/orders/:id", numericId, requireAuth, orders.getOne);
+router.patch("/orders/:id/status", numericId, ...staff, validate(s.orderStatusSchema), orders.updateStatus);
 
 // Contributions
 router.post("/contributions", requireAuth, validate(s.contributionSchema), contributions.create);
@@ -72,13 +77,13 @@ router.get("/contact", ...staff, contact.list);
 
 // Rescue
 router.get("/rescue", rescue.board);
-router.get("/rescue/:id", rescue.getOne);
+router.get("/rescue/:id", numericId, rescue.getOne);
 router.post("/rescue", ...staff, validate(s.listingSchema), rescue.create);
-router.patch("/rescue/:id", ...staff, validate(s.listingUpdateSchema), rescue.update);
-router.get("/rescue/:id/matches", ...staff, rescue.matches);
-router.post("/rescue/:id/reserve", ...staffOrPartner, validate(s.reserveSchema), rescue.reserve);
-router.post("/rescue/:id/release", ...staffOrPartner, rescue.release);
-router.post("/rescue/:id/complete", ...staffOrPartner, rescue.complete);
+router.patch("/rescue/:id", numericId, ...staff, validate(s.listingUpdateSchema), rescue.update);
+router.get("/rescue/:id/matches", numericId, ...staff, rescue.matches);
+router.post("/rescue/:id/reserve", numericId, ...staffOrPartner, validate(s.reserveSchema), rescue.reserve);
+router.post("/rescue/:id/release", numericId, ...staffOrPartner, rescue.release);
+router.post("/rescue/:id/complete", numericId, ...staffOrPartner, rescue.complete);
 
 // Partners
 router.get("/partners", optionalAuth, partners.list);

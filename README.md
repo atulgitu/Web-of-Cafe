@@ -64,9 +64,10 @@ Sample accounts created by `npm run seed`, one per role, for development and tes
 | Community partner | Priya Singh | priya@coffeecinnamon.in |
 | Community partner (vegetarian kitchen) | Aditya Kumar | aditya@coffeecinnamon.in |
 
-Locally they all use the password `cinnamon123`. A production database is seeded with `SAMPLE_ACCOUNT_PASSWORD`
-and `STAFF_PASSWORD` from the hosting environment instead, and the seed refuses to run in production without them,
-so the live accounts never use a password that is in Git.
+Locally they all use the password `cinnamon123`. The production database is filled once, from a developer's machine,
+with `SAMPLE_ACCOUNT_PASSWORD` and `STAFF_PASSWORD` given only to that one command. They are not stored in Git or in
+Vercel, and the seed refuses to run against production without them, so the live accounts never use a password that
+is in Git. (Staff and partner accounts can't be created any other way, which is why the seed needs them.)
 
 After signing in, staff go to the kitchen dashboard (`/dashboard`), partners to their pickups (`/partner`), and
 customers back to where they were.

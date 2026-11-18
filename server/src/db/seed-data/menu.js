@@ -846,16 +846,21 @@ const imageAlt = {
 };
 
 // Category and labels for each item. Anything not listed keeps its original category.
+// Baked goods (croissants, muffins, doughnuts) are "Bakery"; brownie, cheesecake,
+// tiramisu and cupcake stay "Desserts". Every combo stays under "Combos".
 const recategorize = {
   s1: "Breakfast",
-  combo1: "Breakfast",
-  combo5: "Breakfast",
   s2: "Meals",
   s3: "Meals",
   s9: "Meals",
   s10: "Meals",
   s11: "Meals",
-  Desserts: "Bakery",
+  d4: "Bakery",
+  d5: "Bakery",
+  d6: "Bakery",
+  d7: "Bakery",
+  d8: "Bakery",
+  d9: "Bakery",
 };
 
 const labels = {

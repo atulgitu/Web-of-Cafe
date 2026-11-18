@@ -1,7 +1,11 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { btn, container } from "../lib/styles";
 
 export default function NotFound() {
+  useEffect(() => {
+    document.title = "Page not found · Coffee Cinnamon";
+  }, []);
   return (
     <div className={`${container} py-24 text-center`}>
       <p className="text-xs font-semibold tracking-[0.14em] uppercase text-caramel-dark">404</p>

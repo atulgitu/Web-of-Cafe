@@ -16,7 +16,7 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div
-        className="fixed bottom-24 md:bottom-5 inset-x-4 md:inset-x-auto md:right-5 z-[100] flex flex-col gap-2 items-center md:items-end pointer-events-none"
+        className="fixed bottom-24 lg:bottom-5 inset-x-4 lg:inset-x-auto lg:right-5 z-[100] flex flex-col gap-2 items-center lg:items-end pointer-events-none"
         role="status"
         aria-live="polite"
       >

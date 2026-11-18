@@ -1,0 +1,16 @@
+# Files that must never be uploaded by `vercel deploy` from this folder.
+# Local environment files: secrets, and VITE_API_URL=localhost which would break the live site.
+.env
+.env.*
+server/.env
+# Local development database and dependencies (Vercel installs its own).
+server/.pgdata
+node_modules
+server/node_modules
+dist
+# Not part of the website.
+docs
+Web-of-Cafe
+*.png
+!public/**/*.png
+server/.production-accounts.txt

@@ -7,7 +7,7 @@ import { ErrorState, Eyebrow, Skeleton } from "../components/ui";
 import { CAFE } from "../data/site";
 import useApi from "../hooks/useApi";
 import useMenu from "../hooks/useMenu";
-import { formatDate, formatKg, formatNumber, formatRupees, formatTime, formatWindow } from "../lib/format";
+import { formatKg, formatNumber, formatRupees, formatTime, formatWindow } from "../lib/format";
 import { cafeStatus } from "../lib/hours";
 import { btn, container } from "../lib/styles";
 
@@ -48,15 +48,16 @@ export default function Home() {
             Good food shouldn't go to waste.
           </h1>
           <p className="mt-5 text-base sm:text-lg text-charcoal-soft leading-relaxed max-w-lg">
-            Coffee Cinnamon is a neighbourhood café that plans each day's cooking around how much people actually order.
-            Whatever is still left in the evening is collected by community kitchens nearby, not thrown away.
+            Coffee Cinnamon is a neighbourhood café in {CAFE.area} serving filter coffee, chai, breakfast, rice bowls and fresh
+            bakes. Order ahead and collect from the counter. We cook to how much people actually order, and whatever is left
+            in the evening goes to community kitchens nearby, not the bin.
           </p>
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <Link to="/menu" className={`${btn.primary} px-6 py-3`}>
               Order now
             </Link>
             <Link to="/rescue" className={`${btn.secondary} px-6 py-3`}>
-              See {tonight.toLowerCase()}'s rescue
+              See today's rescue
             </Link>
           </div>
           <p className="mt-5 text-sm text-charcoal-soft flex items-center gap-2">
@@ -190,13 +191,15 @@ export default function Home() {
         <ol className="mt-10 grid gap-x-4 gap-y-6 max-w-xl lg:max-w-none lg:grid-cols-7">
           {flow.map((step, i) => (
             <li key={step.title} className="relative lg:pt-6 pl-8 lg:pl-0">
-              {/* the line: espresso for the café side, green for the rescue side */}
-              <span
-                aria-hidden="true"
-                className={`absolute left-[7px] top-0 bottom-[-1.5rem] w-0.5 lg:left-0 lg:right-[-1rem] lg:top-[7px] lg:bottom-auto lg:h-0.5 lg:w-auto ${
-                  step.side === "cafe" ? "bg-espresso/70" : "bg-leaf/70"
-                } ${i === flow.length - 1 ? "lg:right-0 bottom-0" : ""}`}
-              />
+              {/* the line to the next step: espresso for the café side, green for the rescue side */}
+              {i < flow.length - 1 && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute left-[7px] top-0 bottom-[-1.5rem] w-0.5 lg:left-0 lg:right-[-1rem] lg:top-[7px] lg:bottom-auto lg:h-0.5 lg:w-auto ${
+                    step.side === "cafe" ? "bg-espresso/70" : "bg-leaf/70"
+                  }`}
+                />
+              )}
               <span
                 aria-hidden="true"
                 className={`absolute left-0 top-0 w-4 h-4 rounded-full border-2 bg-cream ${step.side === "cafe" ? "border-espresso" : "border-leaf"}`}
@@ -212,122 +215,6 @@ export default function Home() {
           ))}
         </ol>
       </section>
-
-      {/* TODAY TIMELINE + FORECAST */}
-      <section className={`${container} pt-24 grid lg:grid-cols-2 gap-14`}>
-        <div aria-labelledby="today-heading">
-          <Eyebrow>Today at Coffee Cinnamon</Eyebrow>
-          <h2 id="today-heading" className="font-serif-display text-2xl text-espresso mt-3 mb-6">
-            The day so far
-          </h2>
-          {failed ? (
-            <p className="text-sm text-charcoal-soft border-t border-line pt-4">Today's activity isn't available right now.</p>
-          ) : !data ? (
-            <Skeleton className="h-48" />
-          ) : (
-            <ol>
-              {[...data.activity].reverse().map((e) => (
-                <li key={e.id} className="grid grid-cols-[4.75rem_1fr] gap-3 pb-4">
-                  <time dateTime={e.at} className="text-xs font-medium text-charcoal-soft pt-0.5 nums">
-                    {formatTime(e.at)}
-                  </time>
-                  <p className={`text-sm leading-snug border-l pl-4 ${e.type === "pickup_completed" ? "border-leaf text-charcoal" : "border-line text-charcoal-soft"}`}>
-                    {e.message}
-                  </p>
-                </li>
-              ))}
-              <li className="grid grid-cols-[4.75rem_1fr] gap-3">
-                <span className="text-xs font-medium text-leaf pt-0.5">Now</span>
-                <p className="text-sm leading-snug border-l border-leaf pl-4 text-charcoal">
-                  {data.ordersToday === 0 ? "No orders yet today" : `${data.ordersToday} ${data.ordersToday === 1 ? "order" : "orders"} prepared so far today`}
-                </p>
-              </li>
-            </ol>
-          )}
-        </div>
-
-        <div aria-labelledby="forecast-heading">
-          <Eyebrow>Planning the kitchen</Eyebrow>
-          <h2 id="forecast-heading" className="font-serif-display text-2xl text-espresso mt-3">
-            Preparing tomorrow without guessing.
-          </h2>
-          <p className="text-sm text-charcoal-soft mt-2 leading-relaxed">
-            Each morning we look at the last four {data?.forecast?.weekday || "same weekday"}s, recent sales trends and how much the kitchen
-            used to prepare, then recommends quantities with a small safety buffer.
-          </p>
-          {data && !data.forecast && (
-            <p className="mt-6 text-sm text-charcoal-soft border-t border-line pt-4">
-              No forecast today: there isn't enough recent sales history to base one on. It returns once the café has four weeks of sales
-              recorded.
-            </p>
-          )}
-          {data?.forecast && !data.forecast.historyIsCurrent && (
-            <p className="mt-4 text-xs text-caramel-dark">
-              Based on sales recorded up to {formatDate(`${data.forecast.historyThrough}T00:00:00`)} — no newer sales data has been entered.
-            </p>
-          )}
-          {data?.forecast && (
-            <table className="w-full mt-6 text-sm">
-              <caption className="sr-only">Forecast for {data.forecast.weekday}</caption>
-              <thead>
-                <tr className="text-xs text-charcoal-soft text-left border-b border-line">
-                  <th scope="col" className="font-medium pb-2">{data.forecast.weekday}</th>
-                  <th scope="col" className="font-medium pb-2 text-right">Expected</th>
-                  <th scope="col" className="font-medium pb-2 text-right">Prepare</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-line">
-                {data.forecast.items.map((f) => (
-                  <tr key={f.category}>
-                    <th scope="row" className="py-3 text-left font-medium text-espresso">{f.label}</th>
-                    <td className="py-3 text-right nums">
-                      <span className="font-serif-display text-lg text-espresso">{f.predicted}</span>
-                      <span className="block text-xs text-charcoal-soft">{f.low}–{f.high}</span>
-                    </td>
-                    <td className="py-3 text-right nums">
-                      {f.madeToOrder ? <span className="text-xs text-charcoal-soft">made to order</span> : <span className="font-medium text-leaf">{f.recommendedPrep}</span>}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          <p className="text-xs text-charcoal-soft mt-4">
-            A transparent statistical model, not a trained AI. <Link to="/about#forecast" className="underline underline-offset-2 hover:text-espresso">How it works</Link>
-          </p>
-        </div>
-      </section>
-
-      {/* PARTNER */}
-      {data?.nextPartner && next && (
-        <section className={`${container} pt-24`} aria-labelledby="partner-heading">
-          <div className="border-y border-line py-10 grid md:grid-cols-[0.8fr_1.2fr] gap-6 md:gap-14">
-            <div>
-              <Eyebrow>{tonight}'s community partner</Eyebrow>
-              <h2 id="partner-heading" className="font-serif-display text-2xl sm:text-3xl text-espresso mt-3">
-                {data.nextPartner.name}
-              </h2>
-              <p className="text-sm text-charcoal-soft mt-1">
-                {data.nextPartner.type} · {data.nextPartner.area} · about {data.nextPartner.distanceKm} km away
-              </p>
-            </div>
-            <div>
-              <dl className="grid grid-cols-2 gap-6">
-                <div className="flex flex-col-reverse">
-                  <dt className="text-xs text-charcoal-soft mt-1">pickup from our back counter</dt>
-                  <dd className="font-serif-display text-2xl text-espresso nums">{formatTime(next.at)}</dd>
-                </div>
-                <div className="flex flex-col-reverse">
-                  <dt className="text-xs text-charcoal-soft mt-1">{next.item.toLowerCase()}</dt>
-                  <dd className="font-serif-display text-2xl text-espresso nums">{next.portions}</dd>
-                </div>
-              </dl>
-              <p className="text-sm text-charcoal-soft mt-5 leading-relaxed">{data.nextPartner.note}</p>
-              <p className="text-xs text-charcoal-soft mt-3">Partner organisations on this site are sample data.</p>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* IMPACT PREVIEW */}
       <section className="mt-24 bg-espresso text-cream" aria-labelledby="impact-heading">
@@ -384,7 +271,7 @@ function LiveFigure({ label, value, tone, failed }) {
 
 function ImpactFigure({ value, label, small }) {
   return (
-    <div className="flex flex-col-reverse">
+    <div className="flex flex-col-reverse justify-end">
       <dt className="text-sm text-cream/70 mt-1">{label}</dt>
       <dd className={`font-serif-display nums ${small ? "text-2xl" : "text-3xl sm:text-4xl"}`}>{value}</dd>
     </div>

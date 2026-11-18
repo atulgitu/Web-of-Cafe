@@ -59,7 +59,7 @@ export default function Impact() {
             <Stat label="Meals rescued" value={formatNumber(data.measured.mealsRescued)} tone="leaf" />
             <Stat label="Food kept out of the bin" value={formatKg(data.measured.kgRescued)} />
             <Stat label="Successful pickups" value={formatNumber(data.measured.pickups)} />
-            <Stat label={`Customer contributions (${formatNumber(data.measured.contributionsCount)})`} value={formatRupees(data.measured.contributionsAmount)} />
+            <Stat label={`From ${formatNumber(data.measured.contributionsCount)} customer contributions`} value={formatRupees(data.measured.contributionsAmount)} />
           </dl>
           <p className="text-[11px] font-semibold uppercase tracking-wide text-charcoal-soft mt-6">Estimates</p>
           <dl className="mt-2 grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-6 py-4 border-b border-dashed border-line">
@@ -69,7 +69,7 @@ export default function Impact() {
         </div>
       )}
 
-      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-12 mt-14">
+      <div className="grid lg:grid-cols-[1.6fr_1fr] gap-12 mt-14 [&>*]:min-w-0">
         <section aria-labelledby="weekly-heading">
           <h2 id="weekly-heading" className="font-serif-display text-2xl text-espresso">
             Meals rescued each week
@@ -108,7 +108,7 @@ export default function Impact() {
         </section>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-12 mt-16">
+      <div className="grid lg:grid-cols-2 gap-12 mt-16 [&>*]:min-w-0">
         <section aria-labelledby="journey-heading">
           <h2 id="journey-heading" className="font-serif-display text-2xl text-espresso mb-5">
             Recent activity

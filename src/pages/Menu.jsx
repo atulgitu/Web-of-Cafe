@@ -59,55 +59,57 @@ export default function Menu() {
         {fromCache && error && <span className="block text-sm mt-1">Showing the menu saved on this device — prices are confirmed when you order.</span>}
       </PageHeader>
 
-      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:top-16 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 bg-cream/95 backdrop-blur-sm py-3 border-b border-line mb-8">
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
-          <div className="relative sm:w-72">
-            <label htmlFor="menu-search" className="sr-only">
-              Search the menu
-            </label>
-            <input
-              id="menu-search"
-              type="search"
-              value={search}
-              onChange={(e) => update("search", e.target.value)}
-              placeholder="Search coffee, bowls, croissants…"
-              className="w-full pl-9 pr-3 py-2.5 rounded-full border border-line bg-paper text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
-            />
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-soft" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
-            </svg>
-          </div>
-          <div className="flex items-center gap-2 sm:ml-auto">
-            <button type="button" aria-pressed={vegOnly} onClick={() => update("veg", vegOnly ? "" : "1")} className={chip(vegOnly)}>
-              Vegetarian
-            </button>
-            <button type="button" aria-pressed={lowWaste} onClick={() => update("lowwaste", lowWaste ? "" : "1")} className={chip(lowWaste)}>
-              Low-waste picks
-            </button>
-            <label htmlFor="menu-sort" className="sr-only">
-              Sort by
-            </label>
-            <select
-              id="menu-sort"
-              value={sort}
-              onChange={(e) => update("sort", e.target.value)}
-              className="ml-auto sm:ml-0 text-sm border border-line rounded-full px-3 py-1.5 bg-paper focus:outline-none focus:ring-2 focus:ring-caramel/50"
-            >
-              <option value="popular">Popular first</option>
-              <option value="price-asc">Price: low to high</option>
-              <option value="price-desc">Price: high to low</option>
-            </select>
-          </div>
+      {/* Search and filters scroll away; only the category row stays pinned, so on a
+          phone the sticky part is one slim row instead of a quarter of the screen. */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+        <div className="relative sm:w-72">
+          <label htmlFor="menu-search" className="sr-only">
+            Search the menu
+          </label>
+          <input
+            id="menu-search"
+            type="search"
+            value={search}
+            onChange={(e) => update("search", e.target.value)}
+            placeholder="Search coffee, bowls, croissants…"
+            className="w-full pl-9 pr-3 py-2.5 rounded-full border border-line bg-paper text-sm focus:outline-none focus:ring-2 focus:ring-caramel/50"
+          />
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-soft" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.35-4.35" strokeLinecap="round" />
+          </svg>
         </div>
+        <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+          <button type="button" aria-pressed={vegOnly} onClick={() => update("veg", vegOnly ? "" : "1")} className={chip(vegOnly)}>
+            Veg only
+          </button>
+          <button type="button" aria-pressed={lowWaste} onClick={() => update("lowwaste", lowWaste ? "" : "1")} className={chip(lowWaste)}>
+            Low-waste
+          </button>
+          <label htmlFor="menu-sort" className="sr-only">
+            Sort by
+          </label>
+          <select
+            id="menu-sort"
+            value={sort}
+            onChange={(e) => update("sort", e.target.value)}
+            className="min-h-10 sm:min-h-9 text-sm border border-line rounded-full px-3 bg-paper focus:outline-none focus:ring-2 focus:ring-caramel/50"
+          >
+            <option value="popular">Popular</option>
+            <option value="price-asc">Price: low–high</option>
+            <option value="price-desc">Price: high–low</option>
+          </select>
+        </div>
+      </div>
 
-        <nav aria-label="Menu categories" className="mt-3 flex gap-2 overflow-x-auto scroll-thin pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
+      <div className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] lg:top-16 z-30 -mx-4 px-4 sm:mx-0 sm:px-0 bg-cream/95 backdrop-blur-sm py-3 border-b border-line mt-4 mb-8">
+        <div role="group" aria-label="Menu categories" className="flex gap-2 overflow-x-auto scroll-thin pb-1 -mx-4 px-4 sm:mx-0 sm:px-0">
           {["All", ...categories].map((c) => (
             <button key={c} type="button" aria-pressed={category === c} onClick={() => update("category", c)} className={chip(category === c)}>
               {c}
             </button>
           ))}
-        </nav>
+        </div>
       </div>
 
       {loading ? (

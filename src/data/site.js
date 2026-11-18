@@ -20,7 +20,7 @@ export const CAFE = {
   pilotStarted: "August 2026",
 };
 
-export const MENU_CATEGORIES = ["Coffee", "Cold Drinks", "Tea", "Breakfast", "Meals", "Snacks", "Bakery", "Combos"];
+export const MENU_CATEGORIES = ["Coffee", "Tea", "Cold Drinks", "Breakfast", "Meals", "Snacks", "Bakery", "Desserts", "Combos"];
 
 export const TAGS = {
   popular: { label: "Popular", tone: "caramel" },

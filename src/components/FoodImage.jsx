@@ -16,6 +16,7 @@ export default function FoodImage({ src, alt, className = "", eager = false, wid
       width={width}
       height={height}
       loading={eager ? "eager" : "lazy"}
+      fetchPriority={eager ? "high" : undefined}
       decoding="async"
       onError={() => setFailed(true)}
       className={`bg-cream-dim ${className}`}

@@ -124,7 +124,7 @@ export function Spinner() {
 export function Note({ children, className = "", label = "Note" }) {
   return (
     <p className={`flex gap-2 text-xs text-charcoal-soft leading-relaxed ${className}`}>
-      <span className="shrink-0 rounded border border-line bg-paper px-1.5 py-px font-semibold tracking-wide uppercase text-[10px] text-charcoal-soft">
+      <span className="shrink-0 self-start rounded border border-line bg-paper px-1.5 py-px font-semibold tracking-wide uppercase text-[10px] text-charcoal-soft">
         {label}
       </span>
       <span>{children}</span>
@@ -148,7 +148,7 @@ export function SummaryRow({ label, value, tone, strong }) {
 // A labelled figure inside a <dl>. Label comes first in the DOM, number shows first.
 export function Stat({ label, value, tone }) {
   return (
-    <div className="flex flex-col-reverse">
+    <div className="flex flex-col-reverse justify-end">
       <dt className="text-xs text-charcoal-soft mt-1">{label}</dt>
       <dd className={`font-serif-display text-2xl sm:text-3xl nums ${tone === "leaf" ? "text-leaf" : "text-espresso"}`}>{value}</dd>
     </div>

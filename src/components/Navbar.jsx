@@ -12,19 +12,9 @@ const navLinks = [
   { to: "/rescue", label: "Rescue" },
   { to: "/impact", label: "Impact" },
   { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
 ];
 
-// Pages that don't fit in the phone tab bar. Before this menu existed, About and
-// Contact could only be reached on a phone by scrolling to the footer.
-const moreLinks = [
-  { to: "/about", label: "About the café" },
-  { to: "/contact", label: "Contact & opening hours" },
-  { to: "/offers", label: "Offers" },
-  { to: "/impact", label: "Impact" },
-];
-
-// One extra link for signed-in staff or partners.
+// One extra link for signed-in staff or partners: their own workspace.
 const roleLinks = {
   STAFF: { to: "/dashboard", label: "Kitchen" },
   PARTNER: { to: "/partner", label: "Pickups" },
@@ -37,8 +27,13 @@ const linkClass = ({ isActive }) =>
       : "text-charcoal-soft hover:text-espresso"
   }`;
 
-// Desktop: full navigation. Mobile: a slim top bar (logo, cart, account) — the
-// main links live in the bottom navigation instead.
+const mobileLinkClass = ({ isActive }) =>
+  `flex items-center justify-between px-4 sm:px-6 py-3.5 text-base border-b border-line ${
+    isActive ? "font-medium text-espresso bg-cream-dim/70" : "text-charcoal hover:bg-cream-dim/60"
+  }`;
+
+// Desktop (lg+): links in the bar, cart and account on the right.
+// Phones and tablets: logo, cart and a Menu button that opens the full list of pages.
 export default function Navbar() {
   const { itemCount } = useCart();
   const { user, logout } = useAuth();
@@ -46,42 +41,49 @@ export default function Navbar() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [accountOpen, setAccountOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const accountRef = useRef(null);
-  const moreRef = useRef(null);
+  const menuRef = useRef(null);
+  const menuButtonRef = useRef(null);
   const extra = user && roleLinks[user.role];
 
   const signOut = () => {
     logout();
     setAccountOpen(false);
-    setMoreOpen(false);
+    setMenuOpen(false);
     showToast("Signed out");
     navigate("/");
   };
 
+  // Close menus when the page changes.
   const [lastPath, setLastPath] = useState(pathname);
   if (lastPath !== pathname) {
     setLastPath(pathname);
     setAccountOpen(false);
-    setMoreOpen(false);
+    setMenuOpen(false);
   }
 
-  // Close whichever dropdown is open on outside click or Escape.
+  // Close whichever menu is open on outside click or Escape.
   useEffect(() => {
-    if (!accountOpen && !moreOpen) return;
+    if (!accountOpen && !menuOpen) return;
     const close = () => {
       setAccountOpen(false);
-      setMoreOpen(false);
+      setMenuOpen(false);
     };
-    const onDown = (e) => !accountRef.current?.contains(e.target) && !moreRef.current?.contains(e.target) && close();
-    const onKey = (e) => e.key === "Escape" && close();
+    const inside = (t) => accountRef.current?.contains(t) || menuRef.current?.contains(t) || menuButtonRef.current?.contains(t);
+    const onDown = (e) => !inside(e.target) && close();
+    const onKey = (e) => {
+      if (e.key !== "Escape") return;
+      if (menuOpen) menuButtonRef.current?.focus();
+      close();
+    };
     document.addEventListener("pointerdown", onDown);
     document.addEventListener("keydown", onKey);
     return () => {
       document.removeEventListener("pointerdown", onDown);
       document.removeEventListener("keydown", onKey);
     };
-  }, [accountOpen, moreOpen]);
+  }, [accountOpen, menuOpen]);
 
   return (
     <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur-sm border-b border-line pt-[env(safe-area-inset-top)]">
@@ -107,7 +109,6 @@ export default function Navbar() {
         </nav>
 
         <div className="flex items-center gap-1 sm:gap-2">
-
           <Link
             to="/cart"
             aria-label={`Cart, ${itemCount} ${itemCount === 1 ? "item" : "items"}`}
@@ -124,56 +125,6 @@ export default function Navbar() {
               </span>
             )}
           </Link>
-
-          <div className="relative lg:hidden" ref={moreRef}>
-            <button
-              type="button"
-              onClick={() => setMoreOpen((o) => !o)}
-              aria-expanded={moreOpen}
-              aria-controls="more-menu"
-              className="flex items-center gap-1.5 min-h-11 px-3 rounded-full text-sm font-medium text-charcoal-soft hover:bg-cream-dim hover:text-espresso"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <path d="M4 7h16M4 12h16M4 17h16" />
-              </svg>
-              More
-            </button>
-            {moreOpen && (
-              <nav id="more-menu" aria-label="More pages" className="absolute right-0 mt-2 w-64 bg-paper border border-line rounded-lg shadow-md py-1 animate-fade-in">
-                {moreLinks.map((l) => (
-                  <NavLink
-                    key={l.to}
-                    to={l.to}
-                    className={({ isActive }) => `block px-4 py-3 text-sm hover:bg-cream-dim ${isActive ? "font-medium text-espresso" : "text-charcoal"}`}
-                  >
-                    {l.label}
-                  </NavLink>
-                ))}
-                {/* On phones the account menu lives here too */}
-                <div className="border-t border-line mt-1 pt-1">
-                  {user ? (
-                    <>
-                      <p className="px-4 pt-2 pb-1 text-xs text-charcoal-soft">
-                        Signed in as <span className="font-medium text-espresso">{user.name}</span>
-                      </p>
-                      {accountLinks(user.role).map((l) => (
-                        <Link key={l.to} to={l.to} className="block px-4 py-3 text-sm text-charcoal hover:bg-cream-dim">
-                          {l.label}
-                        </Link>
-                      ))}
-                      <button type="button" onClick={signOut} className="w-full text-left px-4 py-3 text-sm text-charcoal hover:bg-cream-dim">
-                        Sign out
-                      </button>
-                    </>
-                  ) : (
-                    <Link to="/login" className="block px-4 py-3 text-sm font-medium text-espresso hover:bg-cream-dim">
-                      Sign in
-                    </Link>
-                  )}
-                </div>
-              </nav>
-            )}
-          </div>
 
           {user ? (
             <div className="relative hidden lg:block" ref={accountRef}>
@@ -214,8 +165,89 @@ export default function Navbar() {
               Sign in
             </Link>
           )}
+
+          <button
+            ref={menuButtonRef}
+            type="button"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+            className="lg:hidden flex items-center gap-1.5 min-h-11 px-3 rounded-full text-sm font-medium text-espresso hover:bg-cream-dim"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+              {menuOpen ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
+            </svg>
+            {/* the word is dropped on the narrowest phones (320px) so the bar fits */}
+            <span aria-hidden="true" className="hidden min-[360px]:inline">
+              {menuOpen ? "Close" : "Menu"}
+            </span>
+          </button>
         </div>
       </div>
+
+      {menuOpen && (
+        <div
+          ref={menuRef}
+          id="mobile-menu"
+          className="lg:hidden absolute inset-x-0 top-full bg-paper border-b border-line shadow-lg max-h-[calc(100dvh-3.5rem)] overflow-y-auto animate-fade-in"
+        >
+          <nav aria-label="Main" className="max-w-6xl mx-auto">
+            {navLinks.map((l) => (
+              <NavLink key={l.to} to={l.to} end={l.end} className={mobileLinkClass}>
+                {l.label}
+              </NavLink>
+            ))}
+            {extra && (
+              <NavLink to={extra.to} className={mobileLinkClass}>
+                {extra.label}
+                <span className="text-xs text-charcoal-soft">{ROLE_LABELS[user.role]}</span>
+              </NavLink>
+            )}
+            <NavLink to="/cart" className={mobileLinkClass}>
+              Cart
+              {itemCount > 0 && (
+                <span className="text-sm text-charcoal-soft nums">
+                  {itemCount} {itemCount === 1 ? "item" : "items"}
+                </span>
+              )}
+            </NavLink>
+          </nav>
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4">
+            {user ? (
+              <>
+                <p className="text-xs text-charcoal-soft">
+                  Signed in as <span className="font-medium text-espresso">{user.name}</span>
+                </p>
+                <ul className="mt-1">
+                  {accountLinks(user.role).map((l) => (
+                    <li key={l.to}>
+                      <Link to={l.to} className="block py-2.5 text-sm text-charcoal hover:text-espresso">
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+                <button type="button" onClick={signOut} className="mt-1 py-2.5 text-sm font-medium text-caramel-dark">
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <div className="flex gap-3">
+                <Link to="/login" className="flex-1 inline-flex justify-center items-center rounded-full bg-espresso text-cream text-sm font-medium py-3 hover:bg-espresso-light">
+                  Sign in
+                </Link>
+                <Link
+                  to="/login?mode=register"
+                  className="flex-1 inline-flex justify-center items-center rounded-full border border-espresso/20 text-espresso text-sm font-medium py-3 hover:bg-cream-dim"
+                >
+                  Create account
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
