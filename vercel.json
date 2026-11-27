@@ -5,9 +5,10 @@
   "buildCommand": "npm run build && npm --prefix server run setup-db",
   "outputDirectory": "dist",
   "functions": {
-    "api/[...path].js": { "maxDuration": 30 }
+    "api/index.js": { "maxDuration": 30 }
   },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" },
     { "source": "/((?!api/|assets/|menu/|images/|icons/|sw\\.js|manifest\\.webmanifest|icon\\.svg|placeholder-food\\.svg).*)", "destination": "/index.html" }
   ],
   "headers": [
